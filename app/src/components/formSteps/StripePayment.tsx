@@ -1,116 +1,185 @@
-// components/formSteps/StripePayment.jsx
-import React from "react";
-import { useFormContext } from "react-hook-form";
-import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+"use client";
 
-const CARD_ELEMENT_OPTIONS = {
-  style: {
-    base: {
-      fontSize: "16px",
-      color: "#424770",
-      "::placeholder": { color: "#aab7c4" },
-    },
-    invalid: { color: "#9e2146" },
-  },
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  useStripe,
+  useElements,
+  PaymentElement,
+  Elements, // Import Elements if you want to use it here, but it's passed from app/page.js
+} from "@stripe/react-stripe-js";
+
+// Define the expected shape of the form data
+interface FormData {
+  registrationNumber: string;
+  // Add all other fields you need for the server/metadata
+  cleanAirZone: string;
+  // ...
+}
+
+interface StripePaymentProps {
+  onFinalSubmit: () => void;
+  onBack: () => void;
+  formData: FormData;
+}
+
+// Helper function to calculate cost based on form data (PLACE YOUR REAL LOGIC HERE)
+const calculateCost = (data: FormData): number => {
+  // Example logic: £10.00 for Bristol, £8.00 otherwise.
+  let amountInCents = 0;
+
+  if (data.cleanAirZone === "Bristol") {
+    amountInCents = 1000; 
+  } else {
+    amountInCents = 800; 
+  }
+
+  return amountInCents;
 };
 
-const StripePayment = ({ onFinalSubmit, onBack }: any) => {
+export default function StripePayment({
+  onFinalSubmit,
+  onBack,
+  formData,
+}: StripePaymentProps) {
   const stripe = useStripe();
   const elements = useElements();
-  const { register, handleSubmit } = useFormContext();
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async () => {
-    if (!stripe || !elements) {
+  const amountInCents = calculateCost(formData);
+
+  // 1. Fetch the Client Secret from the server
+  useEffect(() => {
+    const fetchClientSecret = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/create-payment-intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amountInCents,
+            metadata: {
+              registration: formData.registrationNumber,
+              zone: formData.cleanAirZone,
+              // Pass all necessary form data for secure record keeping
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create payment intent on the server.");
+        }
+
+        const data = await response.json();
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret);
+        } else {
+          throw new Error("Server did not return a client secret.");
+        }
+      } catch (err) {
+        console.error("Error fetching client secret:", err);
+        setError("Could not initialize payment. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (amountInCents > 0) {
+      fetchClientSecret();
+    } else {
+      // Handle case where no payment is needed (e.g., exempt vehicle)
+      setIsLoading(false);
+      setError("This vehicle may be exempt, please review step 5.");
+    }
+  }, [amountInCents, formData]); // Dependencies ensure this runs when cost or data changes
+
+  // 2. Handle form submission (Confirm the payment)
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements || !clientSecret) {
+      // Stripe.js has not yet loaded.
       return;
     }
 
-    // A real payment flow requires server-side logic (Payment Intent).
-    // This is the simplified client-side submission logic for the demo.
+    setIsLoading(true);
+    setError(null);
 
-    // const cardElement = elements.getElement(CardElement);
-    // const { error, paymentMethod } = await stripe.createPaymentMethod({...});
+    const { error: paymentError } = await stripe.confirmPayment({
+      elements,
+      clientSecret,
+      confirmParams: {
+        // If you want to redirect after success, use a return_url
+        // For this example, we handle success client-side by checking the result
+        // return_url: `${window.location.origin}/payment-success`,
+      },
+      redirect: "if_required", // Do not redirect if possible
+    });
 
-    // if (error) { ... handle error } else { onFinalSubmit(); }
-
-    // --- SIMULATED SUCCESS ---
-    alert("Payment successful! (Simulated)");
-    onFinalSubmit();
+    if (paymentError) {
+      // Show error to your customer
+      setError(paymentError.message || "Payment failed.");
+      setIsLoading(false);
+    } else {
+      // Payment succeeded! The PaymentIntent is complete.
+      // Note: For true production readiness, you should rely on a Stripe Webhook
+      // for order fulfillment, but this client-side confirmation is fine for simple forms.
+      // Call the success handler.
+      onFinalSubmit();
+    }
+    setIsLoading(false);
   };
 
+  if (isLoading && !clientSecret) {
+    return <div className="p-8 text-center">Loading payment form...</div>;
+  }
+
+  if (error && !clientSecret) {
+    return <div className="p-8 text-center text-red-600">Error: {error}</div>;
+  }
+
   return (
-    <div className="px-10 py-6">
-      <div className="text-center mb-8 max-w-sm mx-auto">
-        <div className="flex items-center justify-center text-lg font-bold text-gray-800 mb-6">
-          <span className="text-[#00b875] mr-2">🔒</span>
-          Guaranteed safe & secure checkout
-          <span className="ml-3 text-sm font-normal text-gray-500">
-            Powered by{" "}
-          </span>
-          <img
-            src="https://js.stripe.com/v3/icon.svg"
-            alt="Stripe"
-            className="w-10 h-10 ml-1"
-          />
+    <form onSubmit={handleSubmit} className="p-8 space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800">
+        Payment: ${(amountInCents / 100).toFixed(2)} USD
+      </h2>
+      <p className="text-sm text-gray-600">
+        Vehicle: **{formData.registrationNumber}** for **{formData.cleanAirZone}
+        **
+      </p>
+
+      {/* The PaymentElement renders the card/bank info inputs */}
+      {clientSecret && (
+        <div className="border p-4 rounded-lg bg-gray-50">
+          <PaymentElement options={{ layout: "tabs" }} />
         </div>
+      )}
+
+      {error && <div className="text-red-500 font-medium">{error}</div>}
+
+      <div className="flex justify-between mt-8">
+        <button
+          type="button"
+          onClick={onBack}
+          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150"
+          disabled={isLoading}
+        >
+          Back
+        </button>
+        <button
+          type="submit"
+          className="px-6 py-2 bg-[#00b875] text-white rounded-lg hover:bg-[#009e66] transition duration-150 disabled:opacity-50"
+          disabled={!stripe || !elements || isLoading || !clientSecret}
+        >
+          {isLoading
+            ? "Processing..."
+            : `Pay $${(amountInCents / 100).toFixed(2)}`}
+        </button>
       </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-sm mx-auto">
-        <div className="mb-6 text-left">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Card details
-          </label>
-          <div className="p-3 border border-gray-300 rounded-lg bg-white shadow-inner">
-            <CardElement options={CARD_ELEMENT_OPTIONS} />
-          </div>
-        </div>
-
-        <div className="mb-6 text-left">
-          <label
-            htmlFor="country"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Country
-          </label>
-          <select
-            id="country"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-[#00b875] focus:border-[#00b875] transition"
-            {...register("country", { required: true })}
-            defaultValue="Bangladesh"
-          >
-            <option value="Bangladesh">Bangladesh</option>
-            <option value="UK">UK</option>
-            {/* Add more countries */}
-          </select>
-        </div>
-
-        {/* Secure SSL image (Optional: use a real asset if needed) */}
-        <div className="text-center mt-8 border-t border-gray-200 pt-6">
-          {/* Replace with your secure image asset if available */}
-          <img
-            src="https://static.wixstatic.com/media/259837_71e11e3b6d5146c98c19b0d2358c281b~mv2.png"
-            alt="Secure SSL Encryption"
-            className="mx-auto w-40"
-          />
-        </div>
-
-        <div className="flex justify-between mt-10">
-          <button
-            type="button"
-            onClick={onBack}
-            className="w-full mr-4 px-6 py-3 border-2 border-[#00b875] text-[#00b875] font-bold rounded-lg hover:bg-gray-100 transition duration-200 shadow-md"
-          >
-            Back
-          </button>
-          <button
-            type="submit"
-            className="w-full ml-4 px-6 py-3 bg-[#00b875] text-white font-bold rounded-lg hover:bg-[#00995c] transition duration-200 shadow-md"
-          >
-            Submit
-          </button>
-        </div>
-      </form>
-    </div>
+    </form>
   );
-};
+}
 
-export default StripePayment;
+// **Important:** This component relies on being wrapped in <Elements> in app/page.js
