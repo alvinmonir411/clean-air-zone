@@ -12,3 +12,34 @@
 .hoverBg {
   @apply bg-[#9fdbc8];
 }
+@layer components {
+  /* কাস্টম রেডিও বাটন ডিজাইন */
+  .custom-radio-group input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    margin-right: 0.75rem;
+    position: relative;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .custom-radio-group input[type="radio"]:checked {
+    border-color: #00b875;
+  }
+  .custom-radio-group input[type="radio"]:checked::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background-color: #00b875;
+  }
+}

@@ -142,7 +142,7 @@ const Chech: React.FC = () => {
         {/* Action Button */}
         <div className="mb-10">
           <Link
-            href={"/privacy"}
+            href={"/MultistepForm"}
             className="w-full py-4 px-7  bg-blue-600 text-white font-semibold text-lg rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200/50"
           >
             Check Compliance
