@@ -1,11 +1,7 @@
 "use client";
 import Link from "next/link";
 
-const navItems = [
-  { name: "Home", href: "/" },
-  { name: "About Us", href: "/About" },
-  { name: "Contact", href: "/contact" },
-];
+const navItems = [{ name: "Home", href: "/" }];
 
 const legalItems = [
   { name: "Terms and Conditions", href: "/terms" },

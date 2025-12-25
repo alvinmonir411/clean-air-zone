@@ -31,10 +31,6 @@ const Step1_Vehicle = ({ onNext }: any) => {
               required: "Registration Number is required",
             })}
           />
-
-          <small className="text-gray-500 mt-1 block">
-            Don't confuse "I" and "0" for "1" and "0"
-          </small>
         </div>
 
         <div className="mb-6 max-w-sm mx-auto text-left">

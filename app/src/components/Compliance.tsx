@@ -39,7 +39,7 @@ const Compliance = () => {
           </p>
 
           <Link
-            href="/Exemptions"
+            href="/Chech"
             className="bg-green-400 hover:bg-green-500 transition px-6 py-3 rounded-2xl text-sm md:text-base font-medium"
           >
             View Exemptions
