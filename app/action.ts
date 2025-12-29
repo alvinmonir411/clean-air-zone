@@ -11,12 +11,12 @@ export async function createCheckoutSession(formData: FormData) {
     line_items: [
       {
         price_data: {
-          currency: "gbp", // ✅ Changed to GBP (British Pound)
+          currency: "gbp",
           product_data: {
             name: `Vehicle Compliance Check - ${data.cleanAirZone || "Zone"}`,
             description: `${data.registrationNumber || "Vehicle"}`,
           },
-          unit_amount: 1400, // ✅ £14.00 = 1400 pence (cents)
+          unit_amount: 1400,
         },
         quantity: 1,
       },
