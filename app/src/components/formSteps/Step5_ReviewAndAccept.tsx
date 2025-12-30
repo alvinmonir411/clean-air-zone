@@ -1,149 +1,146 @@
-// components/formSteps/Step5_ReviewAndAccept.tsx
+// src/components/formSteps/Step5_ReviewAndAccept.tsx
+"use client";
+
+import { CheckoutFormData } from "@/app/MultistepForm/page";
 import React from "react";
 import { useFormContext } from "react-hook-form";
 
-// 1. Define the TypeScript interface for props
-interface FormData {
-  registrationNumber: string;
-  selectedDates: string[];
-  email: string;
-  acceptTerms: boolean;
-}
-
 interface Step5Props {
-  onNext: () => void;
   onBack: () => void;
-  formData: FormData; // Use the defined type
+  onSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>;
+  loading: boolean;
 }
 
-const formatDates = (dates: string[]): string => {
-  if (!dates || dates.length === 0) {
-    return "No dates selected";
-  }
-  // Display up to the first 3 dates, then show a count for the rest
-  const visibleDates = dates.slice(0, 3).join(", ");
-  const remainingCount = dates.length - 3;
-
-  if (remainingCount > 0) {
-    return `${visibleDates}, and ${remainingCount} more`;
-  }
-  return visibleDates;
-};
-
-// 2. Convert to TypeScript component
 const Step5_ReviewAndAccept: React.FC<Step5Props> = ({
-  onNext,
   onBack,
-  formData,
+  onSubmit,
+  loading,
 }) => {
   const {
+    watch,
     register,
-    handleSubmit,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<CheckoutFormData>();
 
-  // Note: Total amount should ideally be calculated on the server or based on formData.selectedDates.length
-  // We keep the hardcoded value for demonstration based on the old code.
-  const totalAmount = 14.0;
+  // সমস্ত ডেটা ফর্ম কনটেক্সট থেকে ওয়াচ করা
+  const formData = watch();
 
-  const onSubmit = () => {
-    console.log(formData);
-    onNext();
-  };
+  // ইউজারকে দেখানোর জন্য ডেটার একটি পরিষ্কার তালিকা তৈরি করা
+  const summaryItems = [
+    { label: "Vehicle Registration No.", value: formData.registrationNumber },
+    { label: "Country of Registration", value: formData.registrationLocation },
+    { label: "Vehicle Type", value: formData.vehicleType },
+    { label: "Clean Air Zone", value: formData.cleanAirZone },
+    {
+      label: "Selected Payment Dates",
+      value: formData.selectedDates.join(", ") || "No dates selected",
+      highlight: true,
+    },
+    { label: "Payment For (First Date)", value: formData.paymentDate },
+  ];
 
   return (
-    <div className="px-10 py-6">
-      <h2 className="text-2xl font-semibold text-center mb-8 text-gray-800">
-        Review your information
+    <div className="max-w-xl mx-auto px-6 py-8">
+      <h2 className="text-2xl font-semibold text-center mb-6">
+        Review & Confirm Payment
       </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl mx-auto">
-        {/* --- Payment Summary Block (Replaces the removal text) --- */}
-        <div className="p-5 bg-green-50 border border-green-200 rounded-lg mb-8 text-gray-700 shadow-sm">
-          <h3 className="text-lg font-bold mb-3 text-green-700">
-            Payment Summary
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between border-b border-green-100 pb-1">
-              <span className="font-medium">Vehicle Registration:</span>
-              <span className="font-bold uppercase">
-                {formData.registrationNumber || "N/A"}
+
+      {/* ✅ SUMMARY SECTION */}
+      <div className="mb-8 border rounded-xl p-6 bg-gray-50 shadow-sm">
+        <h3 className="text-xl font-bold mb-4 border-b pb-2">Your Details</h3>
+
+        <div className="space-y-3">
+          {summaryItems.map((item, index) => (
+            <div key={index} className="flex justify-between text-lg">
+              <span className="font-medium text-gray-600">{item.label}:</span>
+              <span
+                className={`font-semibold ${
+                  item.highlight ? "text-[#00b875]" : "text-gray-800"
+                }`}
+              >
+                {item.value}
               </span>
             </div>
-            <div className="flex justify-between border-b border-green-100 pb-1">
-              <span className="font-medium">Dates Selected:</span>
-              <span className="text-right ml-4">
-                {/* Display formatted list of dates */}
-                {formatDates(formData.selectedDates)}
-              </span>
-            </div>
+          ))}
+          <div className="pt-4 text-2xl font-extrabold text-red-600 border-t mt-4">
+            <span>Total Payable:</span>
+            <span>£14.00</span>
           </div>
         </div>
-        {/* --- End Payment Summary --- */}
+      </div>
 
-        {/* --- Email Field (Unchanged) --- */}
-        <div className="mb-6 text-left">
+      {/* ✅ EMAIL & TERMS SECTION */}
+      <form onSubmit={onSubmit} className="space-y-5">
+        {/* Email Input */}
+        <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-gray-700 font-medium mb-2"
           >
-            Email
+            Payment Confirmation Email
           </label>
           <input
-            type="email"
             id="email"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-[#00b875] focus:border-[#00b875] transition"
+            type="email"
             {...register("email", {
-              required: "Email is required",
+              required: "Email is required for confirmation.",
               pattern: {
                 value: /^\S+@\S+$/i,
                 message: "Invalid email address",
               },
             })}
+            placeholder="e.g., your.email@example.com"
+            className="w-full p-4 border rounded-xl focus:ring-[#00b875] focus:border-[#00b875]"
           />
-          {/* Email Errors commented out, uncomment if needed */}
+          {errors.email && (
+            <p className="text-red-600 mt-1">
+              {errors.email.message as string}
+            </p>
+          )}
         </div>
 
-        {/* --- Terms & Conditions (Unchanged) --- */}
-        <div className="mb-6 text-left">
-          <label className="flex items-center text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-4 h-4 text-[#00b875] border-gray-300 rounded focus:ring-[#00b875] mr-3"
-              {...register("acceptTerms", {
-                required: "You must accept the Terms and Conditions",
-              })}
-            />
+        {/* Terms Checkbox */}
+        <label className="flex items-center space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            {...register("acceptTerms", {
+              required: "You must accept the terms to proceed.",
+            })}
+            className="w-5 h-5 text-[#00b875] border-gray-300 rounded focus:ring-[#00b875]"
+          />
+          <span className="text-gray-700">
             I accept the{" "}
             <a
               href="#"
-              className="ml-1 text-blue-600 hover:text-blue-800 underline"
+              className="text-[#00b875] font-semibold hover:underline"
             >
               Terms and Conditions
             </a>
-          </label>
-          {/* Terms Errors commented out, uncomment if needed */}
-        </div>
+            .
+          </span>
+        </label>
+        {errors.acceptTerms && (
+          <p className="text-red-600 mt-1">
+            {errors.acceptTerms.message as string}
+          </p>
+        )}
 
-        {/* --- Total Cost (Cost) --- */}
-        <div className="text-right text-xl font-bold text-gray-800 mb-6">
-          Total: £{totalAmount.toFixed(2)}{" "}
-          {/* This displays the required 'Cost' */}
-        </div>
-
-        {/* --- Navigation Buttons (Unchanged) --- */}
-        <div className="flex justify-between mt-10">
+        {/* Navigation & Submit */}
+        <div className="flex gap-4 pt-4">
           <button
             type="button"
             onClick={onBack}
-            className="w-full mr-4 px-6 py-3 border-2 border-[#00b875] text-[#00b875] font-bold rounded-lg hover:bg-gray-100 transition duration-200 shadow-md"
+            className="w-full py-4 border border-gray-300 rounded-xl text-lg hover:bg-gray-50"
           >
             Back
           </button>
+
           <button
             type="submit"
-            className="w-full ml-4 px-6 py-3 bg-[#00b875] text-white font-bold rounded-lg hover:bg-[#00995c] transition duration-200 shadow-md"
+            disabled={loading}
+            className="w-full py-4 bg-[#00b875] text-white text-lg font-semibold rounded-xl disabled:opacity-50 hover:bg-[#009b61]"
           >
-            Submit
+            {loading ? "Processing Payment..." : "Pay £14.00 Securely"}
           </button>
         </div>
       </form>

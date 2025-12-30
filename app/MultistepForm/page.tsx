@@ -6,18 +6,19 @@ import Step1_Vehicle from "../src/components/formSteps/Step1_Vehicle";
 import Step2_Type from "../src/components/formSteps/Step2_Type";
 import Step3_Location from "../src/components/formSteps/Step3_Location";
 import Step4_Date from "../src/components/formSteps/Step4_Date";
+/* ✅ Step 5 কম্পোনেন্টটি ইমপোর্ট করা হলো */
 import Step5_ReviewAndAccept from "../src/components/formSteps/Step5_ReviewAndAccept";
 import Stepper from "../src/components/Stepper";
 import { createCheckoutSession } from "../action";
 
-/* ✅ RENAMED TYPE (avoid clash with browser FormData) */
+/* ✅ RENAMED TYPE */
 export interface CheckoutFormData {
   registrationNumber: string;
   registrationLocation: string;
   vehicleType: string;
   cleanAirZone: string;
   paymentDate: string;
-  selectedDates: string[]; // ✅ FIXED
+  selectedDates: string[];
   email: string;
   acceptTerms: boolean;
   country: string;
@@ -30,13 +31,13 @@ const defaultValues: CheckoutFormData = {
   vehicleType: "Car",
   cleanAirZone: "Bristol",
   paymentDate: "",
-  selectedDates: [], // ✅ REQUIRED FIELD ADDED
+  selectedDates: [],
   email: "",
   acceptTerms: false,
   country: "UK",
 };
 
-const totalSteps = 6;
+const totalSteps = 5; // ✅ যেহেতু Step 6 নেই, তাই এটি 5 হবে।
 
 const MultiStepForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -46,9 +47,8 @@ const MultiStepForm = () => {
   const methods = useForm<CheckoutFormData>({
     defaultValues,
     mode: "onBlur",
-  });
+  }); /* FIX HYDRATION ISSUE */
 
-  /* ✅ FIX HYDRATION ISSUE */
   useEffect(() => {
     methods.setValue("paymentDate", new Date().toISOString().substring(0, 10));
   }, [methods]);
@@ -61,7 +61,7 @@ const MultiStepForm = () => {
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
+  }; // onSubmit ফাংশনটি এখন Step5_ReviewAndAccept থেকে কল করা হবে
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (!data.acceptTerms) {
@@ -74,6 +74,7 @@ const MultiStepForm = () => {
     const formDataToSend = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) {
+        // If it's an array (like selectedDates), append each value
         value.forEach((v) => formDataToSend.append(key, v));
       } else {
         formDataToSend.append(key, String(value));
@@ -90,7 +91,6 @@ const MultiStepForm = () => {
       alert("Payment initiation failed. Please try again.");
       setLoading(false);
     }
-   
   };
 
   useEffect(() => {
@@ -98,7 +98,8 @@ const MultiStepForm = () => {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("canceled") === "true") {
         setCanceled(true);
-        setCurrentStep(6);
+        // যদি ক্যান্সেল হয়, তবে স্টেপ 5 (রিভিউ) তে ফিরে যাওয়া ভালো
+        setCurrentStep(5);
       }
     }
   }, []);
@@ -107,9 +108,11 @@ const MultiStepForm = () => {
     if (canceled) {
       return (
         <div className="p-10 text-center">
+                   {" "}
           <h2 className="text-2xl font-bold text-red-600 mb-4">
-            Payment Canceled
+                        Payment Canceled          {" "}
           </h2>
+                   {" "}
           <button
             onClick={() => {
               setCanceled(false);
@@ -117,8 +120,9 @@ const MultiStepForm = () => {
             }}
             className="bg-[#00b875] text-white px-8 py-3 rounded-lg"
           >
-            Try Again
+                        Try Again          {" "}
           </button>
+                 {" "}
         </div>
       );
     }
@@ -134,38 +138,12 @@ const MultiStepForm = () => {
         return <Step4_Date onNext={handleNext} onBack={handleBack} />;
       case 5:
         return (
+          /* ✅ Step 5 এ এখন নতুন কম্পোনেন্ট রেন্ডার করা হলো */
           <Step5_ReviewAndAccept
-            onNext={handleNext}
             onBack={handleBack}
-            formData={formData}
-          />
-        );
-      case 6:
-        return (
-          <form
             onSubmit={methods.handleSubmit(onSubmit)}
-            className="p-8 space-y-4"
-          >
-            <input
-              type="email"
-              {...methods.register("email", { required: true })}
-              placeholder="Confirm your email"
-              className="w-full p-3 border rounded"
-            />
-
-            <label className="flex items-center space-x-2">
-              <input type="checkbox" {...methods.register("acceptTerms")} />
-              <span>I accept the terms</span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={loading || !formData.acceptTerms}
-              className="bg-[#00b875] text-white px-6 py-3 rounded w-full"
-            >
-              {loading ? "Processing..." : "Pay £14.00 Securely"}
-            </button>
-          </form>
+            loading={loading}
+          />
         );
       default:
         return null;
@@ -174,10 +152,12 @@ const MultiStepForm = () => {
 
   return (
     <div className="flex justify-center min-h-screen bg-gray-50 pt-10">
+           {" "}
       <div className="w-full max-w-4xl bg-white rounded-xl shadow">
-        <Stepper currentStep={currentStep} />
-        <FormProvider {...methods}>{renderStep()}</FormProvider>
+                <Stepper currentStep={currentStep} />       {" "}
+        <FormProvider {...methods}>{renderStep()}</FormProvider>     {" "}
       </div>
+         {" "}
     </div>
   );
 };
