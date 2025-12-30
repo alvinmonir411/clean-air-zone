@@ -45,7 +45,7 @@ interface Step4Props {
   onBack: () => void;
 }
 
-const MAX_DATES = 5; // Maximum number of dates allowed
+const MAX_DATES = 100;
 
 // --- Step 4 Component ---
 const Step4_Date: React.FC<Step4Props> = ({ onNext, onBack }) => {
