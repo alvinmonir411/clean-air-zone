@@ -22,7 +22,7 @@ interface Payment {
 
 async function getPayments(): Promise<Payment[]> {
   const client = await clientPromise;
-  const db = client.db("MONGODB_DB");
+  const db = client.db();
 
   const payments = await db
     .collection("payments")
@@ -31,10 +31,10 @@ async function getPayments(): Promise<Payment[]> {
     .toArray();
 
   // We must serialize the data before passing to client component
-  return payments.map(p => ({
+  return payments.map((p) => ({
     ...p,
     _id: p._id.toString(),
-    createdAt: p.createdAt ? p.createdAt.toISOString() : null,
+    createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null,
   })) as unknown as Payment[];
 }
 
@@ -51,7 +51,9 @@ export default async function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Payment Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          Payment Dashboard
+        </h1>
         <DashboardClient initialPayments={payments} />
       </div>
     </div>

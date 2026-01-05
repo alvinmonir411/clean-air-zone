@@ -4,7 +4,7 @@ import clientPromise from "../../lib/mongodb";
 export async function GET() {
     try {
         const client = await clientPromise;
-        const db = client.db("MONGODB_DB");
+        const db = client.db();
 
         // Sort by createdAt descending (newest first)
         const payments = await db
