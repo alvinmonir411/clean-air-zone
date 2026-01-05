@@ -29,7 +29,7 @@ interface Payment {
     totalAmount: number;
     currency: string;
     status: string;
-    createdAt: string; // Serialized date
+    createdAt: string | null; // Serialized date
     stripeSessionId?: string;
 }
 

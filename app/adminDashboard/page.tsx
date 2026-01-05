@@ -22,13 +22,18 @@ interface Payment {
 
 async function getPayments(): Promise<Payment[]> {
   const client = await clientPromise;
-  const db = client.db();
+  const db = client.db("MONGODB_DB");
 
   const payments = await db
     .collection("payments")
     .find({})
     .sort({ createdAt: -1 })
     .toArray();
+
+  console.log(`AdminDashboard: Found ${payments.length} orders`);
+  if (payments.length > 0) {
+    console.log("AdminDashboard: First order sample:", JSON.stringify(payments[0], null, 2));
+  }
 
   // We must serialize the data before passing to client component
   return payments.map((p) => ({

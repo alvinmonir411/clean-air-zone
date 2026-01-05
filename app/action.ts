@@ -62,7 +62,7 @@ export async function createCheckoutSession(formData: FormData) {
   });
 
   // 3️⃣ Update DB with Stripe Session ID
-  await db.collection("payments").updateOne(
+  await db.collection("orders").updateOne(
     { _id: result.insertedId },
     {
       $set: {
