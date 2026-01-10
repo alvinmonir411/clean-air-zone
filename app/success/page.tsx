@@ -19,7 +19,12 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   }
 
   // Retrieve Stripe session if needed
-  const session = await stripe.checkout.sessions.retrieve(session_id);
+  let session = null;
+  try {
+    session = await stripe.checkout.sessions.retrieve(session_id);
+  } catch (error) {
+    console.error("Error retrieving Stripe session:", error);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">

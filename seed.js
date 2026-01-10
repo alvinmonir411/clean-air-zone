@@ -8,8 +8,8 @@ const client = new MongoClient(uri);
 async function run() {
     try {
         await client.connect();
-        const db = client.db("juwelarysop"); // Explicitly using the database name
-        const collection = db.collection("orders");
+        const db = client.db("MONGODB_DB"); // Explicitly using the database name
+        const collection = db.collection("payments");
 
         const doc = {
             _id: "dummy_id_" + Date.now().toString(),
@@ -22,12 +22,7 @@ async function run() {
             totalAmount: 1400,
             currency: "GBP",
             status: "paid",
-            createdAt: new Date().toISOString(), // DashboardClient expects string or null if using my fix, but typically serialized from Date object. My code serialization handles Date usage.
-            // Wait, the interface expects `string | null` for `createdAt` in `DashboardClient`.
-            // The server `getPayments` serializes Date to string. 
-            // So in DB it should be Date or string? 
-            // `app/adminDashboard/page.tsx` line 37: `createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null`
-            // So DB can have Date or String. I'll insert Date.
+            createdAt: new Date().toISOString(),
         };
 
         // Override createdAt to be a Date object for the DB
