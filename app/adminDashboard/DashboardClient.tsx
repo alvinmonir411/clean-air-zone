@@ -56,6 +56,32 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
     const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
     const [priceInput, setPriceInput] = useState<string>("");
     const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
+    const [visibleFields, setVisibleFields] = useState<string[]>([
+        "registrationNumber",
+        "cleanAirZone",
+        "selectedDates",
+        "totalAmount",
+        "status",
+        "createdAt"
+    ]);
+
+    const allFields = [
+        { key: "registrationNumber", label: "Registration No." },
+        { key: "registrationLocation", label: "Reg. Location" },
+        { key: "vehicleType", label: "Vehicle Type" },
+        { key: "cleanAirZone", label: "Clean Air Zone" },
+        { key: "email", label: "Customer Email" },
+        { key: "selectedDates", label: "Dates" },
+        { key: "totalAmount", label: "Amount" },
+        { key: "status", label: "Status" },
+        { key: "createdAt", label: "Date Created" }
+    ];
+
+    const toggleField = (key: string) => {
+        setVisibleFields(prev =>
+            prev.includes(key) ? prev.filter(f => f !== key) : [...prev, key]
+        );
+    };
 
     // Fetch current price
     useEffect(() => {
@@ -199,10 +225,10 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                     />
                 </div>
 
-                <div className="flex items-center gap-2 w-full md:w-auto">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                     <Filter className="text-gray-400 w-4 h-4" />
                     <select
-                        className="w-full md:w-48 pl-2 pr-8 py-2 bg-[#2a2a2a] border border-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-white"
+                        className="flex-1 md:w-48 pl-2 pr-8 py-2 bg-[#2a2a2a] border border-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-white"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
@@ -212,6 +238,28 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                         <option value="completed">Completed</option>
                         <option value="failed">Failed</option>
                     </select>
+
+                    <div className="relative group flex-1 md:flex-none">
+                        <button className="w-full flex items-center justify-between gap-2 px-4 py-2 bg-[#2a2a2a] border border-white/5 rounded-lg text-sm text-white hover:bg-[#333]">
+                            <span>Fields</span>
+                            <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <div className="absolute right-0 top-full mt-2 w-56 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl z-50 p-2 hidden group-hover:block">
+                            <div className="space-y-1">
+                                {allFields.map((field) => (
+                                    <label key={field.key} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={visibleFields.includes(field.key)}
+                                            onChange={() => toggleField(field.key)}
+                                            className="rounded border-white/10"
+                                        />
+                                        <span className="text-xs text-gray-300">{field.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -223,44 +271,75 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                         className="bg-[#1e1e1e] p-5 rounded-xl border border-white/10 space-y-4"
                     >
                         <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="font-bold text-lg text-white">
-                                    {payment.registrationNumber}
-                                </h3>
-                                <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
-                                    <MapPin className="w-3 h-3" /> {payment.cleanAirZone}
-                                </p>
-                            </div>
-                            <StatusBadge status={payment.status} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="p-3 bg-white/5 rounded-lg">
-                                <span className="text-gray-500 block text-xs">Dates</span>
-                                <button
-                                    onClick={() => toggleDateExpansion(payment._id)}
-                                    className="font-medium text-blue-400 flex items-center gap-1 mt-1"
-                                >
-                                    {payment.selectedDates.length} days
-                                    {expandedDates[payment._id] ? (
-                                        <ChevronUp className="w-3 h-3" />
-                                    ) : (
-                                        <ChevronDown className="w-3 h-3" />
-                                    )}
-                                </button>
-                                {expandedDates[payment._id] && (
-                                    <div className="mt-2 text-xs text-gray-400 space-y-1">
-                                        {payment.selectedDates.map((d) => (
-                                            <div key={d}>{d}</div>
-                                        ))}
-                                    </div>
+                            <div className="space-y-1">
+                                {visibleFields.includes("registrationNumber") && (
+                                    <h3 className="font-bold text-lg text-white">
+                                        {payment.registrationNumber}
+                                    </h3>
+                                )}
+                                {visibleFields.includes("cleanAirZone") && (
+                                    <p className="text-sm text-gray-400 flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" /> {payment.cleanAirZone}
+                                    </p>
+                                )}
+                                {visibleFields.includes("email") && (
+                                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Mail className="w-3 h-3" /> {payment.email}
+                                    </p>
                                 )}
                             </div>
-                            <div className="p-3 bg-white/5 rounded-lg">
-                                <span className="text-gray-500 block text-xs">Amount</span>
-                                <span className="font-medium text-white">
-                                    £{(payment.totalAmount / 100).toFixed(2)}
-                                </span>
-                            </div>
+                            {visibleFields.includes("status") && <StatusBadge status={payment.status} />}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                            {visibleFields.includes("selectedDates") && (
+                                <div className="p-3 bg-white/5 rounded-lg col-span-2 md:col-span-1">
+                                    <span className="text-gray-500 block text-xs">Dates</span>
+                                    <button
+                                        onClick={() => toggleDateExpansion(payment._id)}
+                                        className="font-medium text-blue-400 flex items-center gap-1 mt-1"
+                                    >
+                                        {payment.selectedDates.length} days
+                                        {expandedDates[payment._id] ? (
+                                            <ChevronUp className="w-3 h-3" />
+                                        ) : (
+                                            <ChevronDown className="w-3 h-3" />
+                                        )}
+                                    </button>
+                                    {expandedDates[payment._id] && (
+                                        <div className="mt-2 text-xs text-gray-400 space-y-1">
+                                            {payment.selectedDates.map((d) => (
+                                                <div key={d}>{d}</div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {visibleFields.includes("totalAmount") && (
+                                <div className="p-3 bg-white/5 rounded-lg">
+                                    <span className="text-gray-500 block text-xs">Amount</span>
+                                    <span className="font-medium text-white">
+                                        £{(payment.totalAmount / 100).toFixed(2)}
+                                    </span>
+                                </div>
+                            )}
+
+                            {visibleFields.includes("vehicleType") && (
+                                <div className="p-3 bg-white/5 rounded-lg text-xs">
+                                    <span className="text-gray-500 block">Vehicle</span>
+                                    <span className="text-gray-300">{payment.vehicleType}</span>
+                                </div>
+                            )}
+
+                            {visibleFields.includes("createdAt") && (
+                                <div className="p-3 bg-white/5 rounded-lg text-xs col-span-2">
+                                    <span className="text-gray-500 block">Created At</span>
+                                    <span className="text-gray-300">
+                                        {payment.createdAt ? format(new Date(payment.createdAt), "MMM d, yyyy HH:mm") : "-"}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -272,28 +351,42 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                     <table className="w-full text-left text-sm">
                         <thead className="bg-white/5 border-b border-white/10">
                             <tr>
-                                <SortableHeader label="Vehicle" sortKey="registrationNumber" currentSort={sortConfig} onSort={handleSort} />
-                                <th className="px-6 py-4 font-semibold text-gray-300">Zone & Type</th>
-                                <SortableHeader label="Customer" sortKey="email" currentSort={sortConfig} onSort={handleSort} />
-                                <SortableHeader label="Dates" sortKey="dateCount" currentSort={sortConfig} onSort={handleSort} />
-                                <SortableHeader label="Amount" sortKey="totalAmount" currentSort={sortConfig} onSort={handleSort} />
-                                <SortableHeader label="Status" sortKey="status" currentSort={sortConfig} onSort={handleSort} />
-                                <SortableHeader label="Date Created" sortKey="createdAt" currentSort={sortConfig} onSort={handleSort} />
+                                {visibleFields.includes("registrationNumber") && <SortableHeader label="Vehicle" sortKey="registrationNumber" currentSort={sortConfig} onSort={handleSort} />}
+                                {visibleFields.includes("cleanAirZone") && <th className="px-6 py-4 font-semibold text-gray-300">Zone & Type</th>}
+                                {visibleFields.includes("email") && <SortableHeader label="Customer" sortKey="email" currentSort={sortConfig} onSort={handleSort} />}
+                                {visibleFields.includes("selectedDates") && <SortableHeader label="Dates" sortKey="dateCount" currentSort={sortConfig} onSort={handleSort} />}
+                                {visibleFields.includes("totalAmount") && <SortableHeader label="Amount" sortKey="totalAmount" currentSort={sortConfig} onSort={handleSort} />}
+                                {visibleFields.includes("status") && <SortableHeader label="Status" sortKey="status" currentSort={sortConfig} onSort={handleSort} />}
+                                {visibleFields.includes("createdAt") && <SortableHeader label="Date Created" sortKey="createdAt" currentSort={sortConfig} onSort={handleSort} />}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {sortedPayments.map((payment) => (
                                 <tr key={payment._id} className="hover:bg-white/5 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-white">
-                                        {payment.registrationNumber}
-                                        <span className="block text-xs text-gray-500 font-normal">{payment.registrationLocation}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-400">{payment.cleanAirZone}</td>
-                                    <td className="px-6 py-4 text-gray-400">{payment.email}</td>
-                                    <td className="px-6 py-4 text-gray-400">{payment.selectedDates.length} days</td>
-                                    <td className="px-6 py-4 font-medium text-white">£{(payment.totalAmount / 100).toFixed(2)}</td>
-                                    <td className="px-6 py-4"><StatusBadge status={payment.status} /></td>
-                                    <td className="px-6 py-4 text-gray-500">{payment.createdAt ? format(new Date(payment.createdAt), "MMM d, HH:mm") : "-"}</td>
+                                    {visibleFields.includes("registrationNumber") && (
+                                        <td className="px-6 py-4 font-medium text-white">
+                                            {payment.registrationNumber}
+                                            <span className="block text-xs text-gray-500 font-normal">{payment.registrationLocation}</span>
+                                        </td>
+                                    )}
+                                    {visibleFields.includes("cleanAirZone") && (
+                                        <td className="px-6 py-4 text-gray-400">{payment.cleanAirZone}</td>
+                                    )}
+                                    {visibleFields.includes("email") && (
+                                        <td className="px-6 py-4 text-gray-400">{payment.email}</td>
+                                    )}
+                                    {visibleFields.includes("selectedDates") && (
+                                        <td className="px-6 py-4 text-gray-400">{payment.selectedDates.length} days</td>
+                                    )}
+                                    {visibleFields.includes("totalAmount") && (
+                                        <td className="px-6 py-4 font-medium text-white">£{(payment.totalAmount / 100).toFixed(2)}</td>
+                                    )}
+                                    {visibleFields.includes("status") && (
+                                        <td className="px-6 py-4"><StatusBadge status={payment.status} /></td>
+                                    )}
+                                    {visibleFields.includes("createdAt") && (
+                                        <td className="px-6 py-4 text-gray-500">{payment.createdAt ? format(new Date(payment.createdAt), "MMM d, HH:mm") : "-"}</td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
