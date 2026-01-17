@@ -17,7 +17,7 @@ export async function createCheckoutSession(formData: FormData) {
   let pricePerDay = 1400; // Default fallback
   try {
     const client = await clientPromise;
-    const db = client.db("MONGODB_DB");
+    const db = client.db(process.env.MONGODB_DB);
     const settings = await db.collection("settings").findOne({ _id: "pricing" as any });
     if (settings && settings.amount) {
       pricePerDay = settings.amount;
@@ -30,7 +30,7 @@ export async function createCheckoutSession(formData: FormData) {
 
   // 1️⃣ Save payment as PENDING
   const client = await clientPromise;
-  const db = client.db("MONGODB_DB");
+  const db = client.db(process.env.MONGODB_DB);
 
   const paymentDoc = {
     registrationNumber: data.registrationNumber,

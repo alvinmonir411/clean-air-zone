@@ -332,6 +332,13 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                                 </div>
                             )}
 
+                            {visibleFields.includes("registrationLocation") && (
+                                <div className="p-3 bg-white/5 rounded-lg text-xs">
+                                    <span className="text-gray-500 block">Reg. Location</span>
+                                    <span className="text-gray-300">{payment.registrationLocation}</span>
+                                </div>
+                            )}
+
                             {visibleFields.includes("createdAt") && (
                                 <div className="p-3 bg-white/5 rounded-lg text-xs col-span-2">
                                     <span className="text-gray-500 block">Created At</span>
@@ -376,7 +383,28 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                                         <td className="px-6 py-4 text-gray-400">{payment.email}</td>
                                     )}
                                     {visibleFields.includes("selectedDates") && (
-                                        <td className="px-6 py-4 text-gray-400">{payment.selectedDates.length} days</td>
+                                        <td className="px-6 py-4">
+                                            <button
+                                                onClick={() => toggleDateExpansion(payment._id)}
+                                                className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors font-medium"
+                                            >
+                                                {payment.selectedDates.length} days
+                                                {expandedDates[payment._id] ? (
+                                                    <ChevronUp className="w-3 h-3" />
+                                                ) : (
+                                                    <ChevronDown className="w-3 h-3" />
+                                                )}
+                                            </button>
+                                            {expandedDates[payment._id] && (
+                                                <div className="mt-2 p-2 bg-white/5 rounded-lg border border-white/10">
+                                                    <div className="text-xs text-gray-300 space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+                                                        {payment.selectedDates.map((date, idx) => (
+                                                            <div key={idx} className="whitespace-nowrap">{date}</div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </td>
                                     )}
                                     {visibleFields.includes("totalAmount") && (
                                         <td className="px-6 py-4 font-medium text-white">£{(payment.totalAmount / 100).toFixed(2)}</td>

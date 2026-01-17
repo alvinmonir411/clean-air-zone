@@ -1,33 +1,33 @@
 import nodemailer from "nodemailer";
 
 export async function sendConfirmationEmail(data: {
-    email: string;
-    registrationNumber: string;
-    registrationLocation: string;
-    vehicleType: string;
-    cleanAirZone: string;
-    selectedDates: string[];
-    totalAmount: number;
+  email: string;
+  registrationNumber: string;
+  registrationLocation: string;
+  vehicleType: string;
+  cleanAirZone: string;
+  selectedDates: string[];
+  totalAmount: number;
 }) {
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: process.env.SMTP_PORT === "465", // true for 465, false for other ports
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
-    });
+  const transporter = nodemailer.createTransport({
+    host: (process.env.SMTP_HOST || "").split("//")[0].trim(),
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: (process.env.SMTP_PORT || "").trim() === "465",
+    auth: {
+      user: (process.env.SMTP_USER || "").trim(),
+      pass: (process.env.SMTP_PASS || "").trim(),
+    },
+  });
 
-    const formattedAmount = (data.totalAmount / 100).toFixed(2);
-    const formattedDates = data.selectedDates.join(", ");
+  const formattedAmount = (data.totalAmount / 100).toFixed(2);
+  const formattedDates = data.selectedDates.join(", ");
 
-    const mailOptions = {
-        from: `"${process.env.FROM_EMAIL_NAME || "Payment Confirmation"}" <${process.env.FROM_EMAIL}>`,
-        to: data.email,
-        bcc: process.env.ADMIN_EMAIL,
-        subject: `Payment Confirmed - ${data.registrationNumber}`,
-        html: `
+  const mailOptions = {
+    from: `"${process.env.FROM_EMAIL_NAME || "Payment Confirmation"}" <${(process.env.FROM_EMAIL || "").trim()}>`,
+    to: (data.email || "").trim(),
+    bcc: (process.env.ADMIN_EMAIL || "").trim(),
+    subject: `Payment Confirmed - ${data.registrationNumber}`,
+    html: `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 12px; color: #333; line-height: 1.6;">
         <div style="text-align: center; margin-bottom: 25px;">
           <h1 style="color: #2e7d32; margin: 0; font-size: 24px;">Payment Successful!</h1>
@@ -73,14 +73,14 @@ export async function sendConfirmationEmail(data: {
         </div>
       </div>
     `,
-    };
+  };
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log("✅ Email sent: %s", info.messageId);
-        return info;
-    } catch (error) {
-        console.error("❌ Error sending email:", error);
-        throw error;
-    }
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent: %s", info.messageId);
+    return info;
+  } catch (error) {
+    console.error("❌ Error sending email:", error);
+    throw error;
+  }
 }

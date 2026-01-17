@@ -1,4 +1,6 @@
 import { stripe } from "../lib/stripe";
+import clientPromise from "../lib/mongodb";
+import { sendConfirmationEmail } from "../lib/email";
 
 interface SuccessPageProps {
   searchParams: Promise<{ session_id?: string }>;
@@ -20,10 +22,57 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 
   // Retrieve Stripe session if needed
   let session = null;
+  let paymentUpdated = false;
+
   try {
     session = await stripe.checkout.sessions.retrieve(session_id);
+
+    if (session.payment_status === "paid") {
+      const paymentId = session.metadata?.paymentId;
+      if (paymentId) {
+        const client = await clientPromise;
+        const db = client.db(process.env.MONGODB_DB);
+        const { ObjectId } = await import("mongodb");
+
+        // Check current status to avoid double-sending emails
+        const existingPayment = await db.collection("payments").findOne({ _id: new ObjectId(paymentId) });
+
+        if (existingPayment && existingPayment.status !== "paid") {
+          console.log(`SuccessPage: Updating payment ${paymentId} to paid`);
+          const result = await db.collection("payments").findOneAndUpdate(
+            { _id: new ObjectId(paymentId) },
+            {
+              $set: {
+                status: "paid",
+                paidAt: new Date(),
+                stripeSessionId: session.id
+              }
+            },
+            { returnDocument: "after" }
+          );
+
+          if (result) {
+            console.log("SuccessPage: Sending confirmation emails...");
+            try {
+              await sendConfirmationEmail({
+                email: result.email,
+                registrationNumber: result.registrationNumber,
+                registrationLocation: result.registrationLocation,
+                vehicleType: result.vehicleType,
+                cleanAirZone: result.cleanAirZone,
+                selectedDates: result.selectedDates,
+                totalAmount: result.totalAmount,
+              });
+              paymentUpdated = true;
+            } catch (emailErr) {
+              console.error("SuccessPage: Email notification failed", emailErr);
+            }
+          }
+        }
+      }
+    }
   } catch (error) {
-    console.error("Error retrieving Stripe session:", error);
+    console.error("Error retrieving or updating Stripe session:", error);
   }
 
   return (
@@ -50,6 +99,11 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
         >
           Back to Home
         </a>
+        {paymentUpdated && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
+            ✅ Payment confirmed and confirmation email sent to {session?.customer_email}
+          </div>
+        )}
       </div>
     </div>
   );

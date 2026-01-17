@@ -26,7 +26,8 @@ interface StripePaymentProps {
   formData: FormData;
 }
 
-const calculateCost = (data: FormData, price: number): number => {
+const calculateCost = (data: FormData, price: number | null): number => {
+  if (price === null) return 0;
   const datesCount = Array.isArray(data.selectedDates)
     ? data.selectedDates.length
     : 0;
@@ -44,7 +45,7 @@ export default function StripePayment({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pricePerDayPence, setPricePerDayPence] = useState<number>(1400); // Default 1400
+  const [pricePerDayPence, setPricePerDayPence] = useState<number | null>(null);
 
   const amountInCents = calculateCost(formData, pricePerDayPence);
 
@@ -110,7 +111,7 @@ export default function StripePayment({
       }
     };
 
-    if (amountInCents > 0) {
+    if (amountInCents > 0 && pricePerDayPence !== null) {
       if (pricePerDayPence !== 1400) {
         // If price has updated from default, existing amountInCents change will trigger.
         // This logic might loop if not careful, but amountInCents depends on pricePerDayPence.
@@ -120,7 +121,7 @@ export default function StripePayment({
       } else {
         fetchClientSecret();
       }
-    } else {
+    } else if (pricePerDayPence !== null) {
       setIsLoading(false);
       setError("This vehicle may be exempt, please review step 5.");
     }

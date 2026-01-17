@@ -18,7 +18,7 @@ const Step5_ReviewAndAccept: React.FC<Step5Props> = ({
   onSubmit,
   loading,
 }) => {
-  const [pricePerDay, setPricePerDay] = React.useState(14);
+  const [pricePerDay, setPricePerDay] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     fetch("/api/settings/price")
@@ -40,7 +40,7 @@ const Step5_ReviewAndAccept: React.FC<Step5Props> = ({
   const formData = watch();
 
   const totalDays = formData.selectedDates?.length || 0;
-  const totalAmount = totalDays * pricePerDay;
+  const totalAmount = totalDays * (pricePerDay || 0);
   console.log(totalDays, totalAmount);
 
   return (
@@ -73,7 +73,9 @@ const Step5_ReviewAndAccept: React.FC<Step5Props> = ({
 
           <div className="pt-4 text-2xl font-extrabold  border-t flex justify-between">
             <span>Total Payable:</span>
-            <span>£{totalAmount.toFixed(2)}</span>
+            <span>
+              {pricePerDay === null ? "Loading..." : `£${totalAmount.toFixed(2)}`}
+            </span>
           </div>
         </div>
       </div>
@@ -122,10 +124,10 @@ const Step5_ReviewAndAccept: React.FC<Step5Props> = ({
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-[#00b875] text-white font-semibold rounded-xl"
+            disabled={loading || pricePerDay === null}
+            className="w-full py-4 bg-[#00b875] text-white font-semibold rounded-xl disabled:opacity-50"
           >
-            {loading
+            {loading || pricePerDay === null
               ? "Processing..."
               : `Pay £${totalAmount.toFixed(2)} Securely`}
           </button>
