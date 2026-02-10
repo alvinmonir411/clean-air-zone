@@ -14,6 +14,17 @@ export default function Home() {
     <div>
       <Hero />
       <ZonesMap />
+
+      {/* Moved from Hero */}
+      <section className="bg-white py-12 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-lg md:text-xl text-gray-700 leading-relaxed">
+            To combat increasing vehicle emissions and air pollution throughout
+            the UK, a daily fee for non-compliant vehicles has been implemented
+            in several cities.
+          </p>
+        </div>
+      </section>
       <Compliance />
     </div>
   );

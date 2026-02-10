@@ -47,7 +47,7 @@ const Navber = () => (
           </div>
 
           <Link
-            href="/contact"
+            href="/"
             className="hidden sm:inline-block bg text-white font-semibold text-sm px-4 py-2 rounded-full hover:hoverBg transition duration-300 shadow-md"
           >
             Get a Quote

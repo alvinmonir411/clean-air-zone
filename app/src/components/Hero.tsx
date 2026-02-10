@@ -36,22 +36,18 @@ const Hero = () => {
 
           {/* Heading */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
-            Breathe Easier with
+            Cleaner
             <br />
-            <span className="text-primary-green">Cleaner Air</span>
+            <span className="text-primary-green"> Air Zone Pay</span>
           </h1>
 
           {/* Description */}
-          <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-10">
-            To combat increasing vehicle emissions and air pollution throughout
-            the UK, a daily fee for non-compliant vehicles has been implemented
-            in several cities.
-          </p>
+          {/* Description Removed */}
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/MultistepForm"
+              href="https://clen-iunfremed.vercel.app/MultistepForm?vehicleType=Car&cleanAirZone=Bristol"
               className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white text-[#057a55] font-bold text-lg hover:bg-gray-200 transition shadow-xl"
             >
               Start Now

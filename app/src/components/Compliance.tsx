@@ -18,7 +18,7 @@ const Compliance = () => {
           </p>
 
           <Link
-            href="/Chech"
+            href="/"
             className="bg-green-400 hover:bg-green-500 transition px-6 py-3 rounded-2xl text-sm md:text-base font-medium"
           >
             Check Standards
@@ -39,7 +39,7 @@ const Compliance = () => {
           </p>
 
           <Link
-            href="/Chech"
+            href="/"
             className="bg-green-400 hover:bg-green-500 transition px-6 py-3 rounded-2xl text-sm md:text-base font-medium"
           >
             View Exemptions

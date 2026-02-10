@@ -4,7 +4,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-100 text-gray-700 py-8 mt-12">
       <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="text-xl font-bold text-gray-900">YourBrand</div>
+        <div className="text-xl font-bold text-gray-900">Greener Air</div>
         <div className="flex flex-wrap justify-center gap-6">
           <a href="/contact" className="hover:text-gray-900 transition">
             Contact
@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
           </a>
         </div>
         <div className="text-sm text-gray-500 text-center md:text-right">
-          &copy; {new Date().getFullYear()} YourBrand. All rights reserved.
+          &copy; {new Date().getFullYear()} Greener Air. All rights reserved.
         </div>
       </div>
     </footer>
