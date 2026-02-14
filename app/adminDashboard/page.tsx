@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import LoginView from "./LoginView";
 
 export const revalidate = 0; // Disable caching to always get fresh data
+export const dynamic = "force-dynamic";
+
 
 interface Payment {
   _id: string;

@@ -1,6 +1,8 @@
 import { stripe } from "../lib/stripe";
 import clientPromise from "../lib/mongodb";
 import { sendConfirmationEmail } from "../lib/email";
+export const dynamic = "force-dynamic";
+
 
 interface SuccessPageProps {
   searchParams: Promise<{ session_id?: string }>;

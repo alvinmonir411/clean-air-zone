@@ -47,7 +47,7 @@ const Hero = () => {
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="https://clen-iunfremed.vercel.app/MultistepForm?vehicleType=Car&cleanAirZone=Bristol"
+              href="/MultistepForm"
               className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white text-[#057a55] font-bold text-lg hover:bg-gray-200 transition shadow-xl"
             >
               Start Now

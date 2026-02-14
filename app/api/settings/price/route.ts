@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/app/lib/mongodb";
 
+export const dynamic = "force-dynamic";
+
+
 const DEFAULT_PRICE = 1400; // 14.00 GBP
 
 export async function GET() {

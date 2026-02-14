@@ -1,7 +1,10 @@
-"use server";
 import { stripe } from "@/app/lib/stripe";
-import clientPromise from "@/app/lib/mongodb";
+import clientPromise from "../../lib/mongodb";
 import { ObjectId } from "mongodb";
+
+export const dynamic = "force-dynamic";
+
+
 
 // Price is now dynamic, fetched from DB
 const DEFAULT_PRICE = 1400;
