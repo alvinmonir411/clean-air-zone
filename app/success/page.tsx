@@ -1,7 +1,9 @@
 import { stripe } from "../lib/stripe";
 import clientPromise from "../lib/mongodb";
 import { sendConfirmationEmail } from "../lib/email";
+
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 
 interface SuccessPageProps {
@@ -27,21 +29,28 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   let paymentUpdated = false;
 
   try {
+    console.log(`SuccessPage: Retrieving Stripe session ${session_id}`);
     session = await stripe.checkout.sessions.retrieve(session_id);
 
     if (session.payment_status === "paid") {
       const paymentId = session.metadata?.paymentId;
+      console.log(`SuccessPage: Session is paid. PaymentId in metadata: ${paymentId}`);
+
       if (paymentId) {
         const client = await clientPromise;
         const db = client.db(process.env.MONGODB_DB);
         const { ObjectId } = await import("mongodb");
 
         // Check current status to avoid double-sending emails
-        const existingPayment = await db.collection("payments").findOne({ _id: new ObjectId(paymentId) });
+        const existingPayment = await db.collection("payments").findOne({
+          _id: new ObjectId(paymentId)
+        });
+
+        console.log(`SuccessPage: Existing payment status: ${existingPayment?.status}`);
 
         if (existingPayment && existingPayment.status !== "paid") {
           console.log(`SuccessPage: Updating payment ${paymentId} to paid`);
-          const result = await db.collection("payments").findOneAndUpdate(
+          const resultPatch = await db.collection("payments").findOneAndUpdate(
             { _id: new ObjectId(paymentId) },
             {
               $set: {
@@ -53,25 +62,32 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
             { returnDocument: "after" }
           );
 
-          if (result) {
-            console.log("SuccessPage: Sending confirmation emails...");
+          if (resultPatch) {
+            console.log("SuccessPage: Update successful. Sending confirmation email...");
             try {
               await sendConfirmationEmail({
-                email: result.email,
-                registrationNumber: result.registrationNumber,
-                registrationLocation: result.registrationLocation,
-                vehicleType: result.vehicleType,
-                cleanAirZone: result.cleanAirZone,
-                selectedDates: result.selectedDates,
-                totalAmount: result.totalAmount,
+                email: resultPatch.email,
+                registrationNumber: resultPatch.registrationNumber,
+                registrationLocation: resultPatch.registrationLocation,
+                vehicleType: resultPatch.vehicleType,
+                cleanAirZone: resultPatch.cleanAirZone,
+                selectedDates: resultPatch.selectedDates,
+                totalAmount: resultPatch.totalAmount,
               });
               paymentUpdated = true;
             } catch (emailErr) {
               console.error("SuccessPage: Email notification failed", emailErr);
             }
           }
+        } else if (existingPayment && existingPayment.status === "paid") {
+          console.log("SuccessPage: Payment already marked as paid.");
+          paymentUpdated = true; // Still show success message to user
         }
+      } else {
+        console.warn("SuccessPage: No paymentId found in session metadata.");
       }
+    } else {
+      console.log(`SuccessPage: Session payment status is ${session.payment_status}`);
     }
   } catch (error) {
     console.error("Error retrieving or updating Stripe session:", error);

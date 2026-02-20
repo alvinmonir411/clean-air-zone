@@ -118,7 +118,7 @@ const ContactPage = () => {
               </h2>
               <p className="text-gray-700 mb-2">
                 <span className="font-semibold">Email:</span>{" "}
-                support@cazpayment.uk
+                info@londonmission.co.uk
               </p>
               <p className="text-gray-700 mb-2">
                 <span className="font-semibold">Phone:</span> +44 123 456 7890

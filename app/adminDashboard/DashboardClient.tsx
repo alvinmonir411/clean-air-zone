@@ -20,8 +20,11 @@ import {
     ChevronLeft,
     Users,
     FileText,
-    Settings
+    Settings,
+    RefreshCw
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { verifyPaymentStatus } from "./actions";
 
 interface Payment {
     _id: string;
@@ -42,7 +45,7 @@ interface DashboardClientProps {
     initialPayments: Payment[];
 }
 
-type View = "menu" | "payments" | "prices" | "methods" | "users" | "pages";
+type View = "menu" | "payments" | "prices" | "methods" | "users" | "pages" | "search";
 
 export default function DashboardClient({ initialPayments }: DashboardClientProps) {
     const [activeView, setActiveView] = useState<View>("menu");
@@ -52,6 +55,34 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
         key: keyof Payment | "dateCount";
         direction: "asc" | "desc";
     } | null>({ key: "createdAt", direction: "desc" });
+
+    const router = useRouter();
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [verifyingId, setVerifyingId] = useState<string | null>(null);
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        router.refresh();
+        setTimeout(() => setIsRefreshing(false), 1000);
+    };
+
+    const handleVerify = async (id: string) => {
+        setVerifyingId(id);
+        try {
+            const result = await verifyPaymentStatus(id);
+            if (result.success) {
+                alert(`Status updated to: ${result.newStatus}`);
+                router.refresh();
+            } else {
+                alert(`Verification failed: ${result.error}`);
+            }
+        } catch (error) {
+            console.error("Manual verification failed:", error);
+            alert("An error occurred during verification.");
+        } finally {
+            setVerifyingId(null);
+        }
+    };
 
     const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
     const [priceInput, setPriceInput] = useState<string>("");
@@ -104,11 +135,27 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
             const matchesSearch =
                 payment.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 payment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                payment.cleanAirZone.toLowerCase().includes(searchTerm.toLowerCase());
+                payment.cleanAirZone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (payment.stripeSessionId && payment.stripeSessionId.toLowerCase().includes(searchTerm.toLowerCase()));
+
             const matchesStatus = statusFilter === "all" || payment.status === statusFilter;
+
+            // If in "payments" view, only show today's payments
+            if (activeView === "payments") {
+                if (!payment.createdAt) return false;
+                const paymentDate = new Date(payment.createdAt).toDateString();
+                const today = new Date().toDateString();
+                return matchesStatus && paymentDate === today;
+            }
+
+            // If in "search" view, don't show anything until search starts
+            if (activeView === "search" && !searchTerm.trim()) {
+                return false;
+            }
+
             return matchesSearch && matchesStatus;
         });
-    }, [initialPayments, searchTerm, statusFilter]);
+    }, [initialPayments, searchTerm, statusFilter, activeView]);
 
     const sortedPayments = useMemo(() => {
         if (!sortConfig) return filteredPayments;
@@ -170,14 +217,24 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
         return Array.from(new Set(allEmails));
     }, [initialPayments]);
 
+    const todayPaymentsCount = useMemo(() => {
+        const today = new Date().toDateString();
+        return initialPayments.filter(p => p.createdAt && new Date(p.createdAt).toDateString() === today).length;
+    }, [initialPayments]);
+
     const renderMenu = () => (
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <MenuCard
-                    title="Payments"
-                    count={`${initialPayments.length} items`}
+                    title="Today's Payments"
+                    count={`${todayPaymentsCount} items`}
                     onClick={() => setActiveView("payments")}
+                />
+                <MenuCard
+                    title="Search Transactions"
+                    count={`${initialPayments.length} total items`}
+                    onClick={() => setActiveView("search")}
                 />
                 <MenuCard
                     title="Prices"
@@ -209,7 +266,9 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                 <button onClick={() => setActiveView("menu")} className="p-2 hover:bg-white/10 rounded-full text-white transition-colors">
                     <ChevronLeft className="w-6 h-6" />
                 </button>
-                <h1 className="text-2xl font-bold text-white">Payments</h1>
+                <h1 className="text-2xl font-bold text-white">
+                    {activeView === "payments" ? "Today's Payments" : "Search Transactions"}
+                </h1>
             </div>
 
             {/* Filters Toolbar */}
@@ -218,7 +277,7 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                         type="text"
-                        placeholder="Search registration, email, zone..."
+                        placeholder="Search registration, email, zone, transaction ID..."
                         className="w-full pl-10 pr-4 py-2 bg-[#2a2a2a] border border-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-white"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -260,6 +319,15 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                             </div>
                         </div>
                     </div>
+
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                    </button>
                 </div>
             </div>
 
@@ -288,7 +356,20 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                                     </p>
                                 )}
                             </div>
-                            {visibleFields.includes("status") && <StatusBadge status={payment.status} />}
+                            {visibleFields.includes("status") && (
+                                <div className="flex flex-col items-end gap-1">
+                                    <StatusBadge status={payment.status} />
+                                    {payment.status === "pending" && payment.stripeSessionId && (
+                                        <button
+                                            onClick={() => handleVerify(payment._id)}
+                                            disabled={verifyingId === payment._id}
+                                            className="text-[10px] bg-white/10 hover:bg-white/20 text-blue-400 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                                        >
+                                            {verifyingId === payment._id ? "Verifying..." : "Verify Status"}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 text-sm">
@@ -410,7 +491,21 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                                         <td className="px-6 py-4 font-medium text-white">£{(payment.totalAmount / 100).toFixed(2)}</td>
                                     )}
                                     {visibleFields.includes("status") && (
-                                        <td className="px-6 py-4"><StatusBadge status={payment.status} /></td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <StatusBadge status={payment.status} />
+                                                {payment.status === "pending" && payment.stripeSessionId && (
+                                                    <button
+                                                        onClick={() => handleVerify(payment._id)}
+                                                        disabled={verifyingId === payment._id}
+                                                        className="text-[10px] bg-white/10 hover:bg-white/20 text-blue-400 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                                                        title="Check Stripe Status"
+                                                    >
+                                                        {verifyingId === payment._id ? "..." : "Verify"}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
                                     )}
                                     {visibleFields.includes("createdAt") && (
                                         <td className="px-6 py-4 text-gray-500">{payment.createdAt ? format(new Date(payment.createdAt), "MMM d, HH:mm") : "-"}</td>
@@ -552,7 +647,18 @@ export default function DashboardClient({ initialPayments }: DashboardClientProp
                 </div>
 
                 {activeView === "menu" && renderMenu()}
-                {activeView === "payments" && renderPayments()}
+                {(activeView === "payments" || activeView === "search") && (
+                    <>
+                        {renderPayments()}
+                        {activeView === "search" && !searchTerm.trim() && (
+                            <div className="bg-[#1e1e1e] p-20 rounded-xl border border-white/10 text-center mt-6">
+                                <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                                <h2 className="text-xl font-bold text-white mb-2">Search Transactions</h2>
+                                <p className="text-gray-500">Enter a registration number, email, or transaction ID to start.</p>
+                            </div>
+                        )}
+                    </>
+                )}
                 {activeView === "prices" && renderPrices()}
                 {activeView === "methods" && renderPaymentMethods()}
                 {activeView === "users" && renderUsers()}

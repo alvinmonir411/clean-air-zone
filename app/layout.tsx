@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Clener air zone",
-  description: "google.co.uk",
+  title: "Clean Air Zone",
+  description: "Secure payment for Clean Air Zones in the UK",
 };
 
 export default function RootLayout({

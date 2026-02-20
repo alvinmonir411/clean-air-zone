@@ -59,6 +59,12 @@ export async function POST(req: Request) {
 
   const result = await db.collection("payments").insertOne(paymentDoc);
   console.log(result);
+  // Determine Base URL dynamically
+  const host = req.headers.get("host");
+  const protocol = host?.includes("localhost") ? "http" : "https";
+  const dynamicBaseUrl = `${protocol}://${host}`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || dynamicBaseUrl;
+
   // 2️⃣ Create Stripe Checkout Session
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -78,8 +84,8 @@ export async function POST(req: Request) {
     ],
     customer_email: body.email,
     metadata: { paymentId: result.insertedId.toString() },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/?canceled=true`,
+    success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${baseUrl}/?canceled=true`,
   });
 
   // 3️⃣ Update DB with Stripe Session ID

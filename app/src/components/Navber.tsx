@@ -3,23 +3,18 @@ import Link from "next/link";
 
 const navItems = [{ name: "Home", href: "/" }];
 
-const legalItems = [
-  { name: "Terms and Conditions", href: "/terms" },
-  { name: "Privacy Policy", href: "/privacy" },
-];
+
 
 const Navber = () => (
   <header className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center py-4">
-        <div className="flex items-center space-x-2">
-          <Link
-            href="/"
-            className="text-2xl font-extrabold text-black tracking-tight transition duration-300 hover:text-dark-teal"
-          >
-            Greener Air
-          </Link>
-        </div>
+        <Link
+          href="/"
+          className="text-2xl font-extrabold text-black tracking-tight transition duration-300 hover:text-dark-teal"
+        >
+          Clean Air Zone
+        </Link>
 
         <nav className="flex items-center space-x-6">
           <div className="hidden md:flex space-x-6">
@@ -34,17 +29,7 @@ const Navber = () => (
             ))}
           </div>
 
-          <div className="hidden lg:flex space-x-4 border-l pl-4 border-gray-200">
-            {legalItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-xs text-gray-500 hover:text-sky-blue transition duration-300"
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
+
 
           <Link
             href="/"

@@ -2,6 +2,7 @@
 
 import clientPromise from "./lib/mongodb";
 import { stripe } from "./lib/stripe";
+import { headers } from "next/headers";
 
 export async function createCheckoutSession(formData: FormData) {
   const data = Object.fromEntries(formData);
@@ -47,12 +48,14 @@ export async function createCheckoutSession(formData: FormData) {
 
   const result = await db.collection("payments").insertOne(paymentDoc);
 
-  // 2️⃣ Validation: Check Base URL
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
-    console.error("❌ Missing NEXT_PUBLIC_BASE_URL in environment variables.");
-    throw new Error("Server configuration error: Missing Base URL");
-  }
+  // 2️⃣ Determine Base URL dynamically or from Env
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = host?.includes("localhost") ? "http" : "https";
+  const dynamicBaseUrl = `${protocol}://${host}`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || dynamicBaseUrl;
+
+  console.log(`Checkout: Using baseUrl ${baseUrl}`);
 
   // 3️⃣ Create Stripe Checkout Session
   let session;
