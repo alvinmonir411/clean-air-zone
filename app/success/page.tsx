@@ -1,7 +1,6 @@
 import { stripe } from "../lib/stripe";
 import { getDataSource } from "../lib/db";
 import { Payment, PaymentSchema } from "../lib/entities/payment.entity";
-import { sendConfirmationEmail } from "../lib/email";
 import SuccessActions from "./SuccessActions";
 import { MapPin, Car, Calendar, Mail, BadgeCheck } from "lucide-react";
 
@@ -65,21 +64,8 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           dbPayment = resultPatch;
 
           if (resultPatch) {
-            console.log("SuccessPage: Update successful. Sending confirmation email...");
-            try {
-              await sendConfirmationEmail({
-                email: resultPatch.email,
-                registrationNumber: resultPatch.registrationNumber,
-                registrationLocation: resultPatch.registrationLocation,
-                vehicleType: resultPatch.vehicleType,
-                cleanAirZone: resultPatch.cleanAirZone,
-                selectedDates: resultPatch.selectedDates,
-                totalAmount: resultPatch.totalAmount,
-              });
-              paymentUpdated = true;
-            } catch (emailErr) {
-              console.error("SuccessPage: Email notification failed", emailErr);
-            }
+            console.log("SuccessPage: Update successful. Confirmation email skipped.");
+            paymentUpdated = true;
           }
         } else if (existingPayment && existingPayment.status === "paid") {
           console.log("SuccessPage: Payment already marked as paid.");
@@ -308,11 +294,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           </div>
         )}
 
-        {paymentUpdated && (
-          <div className="mt-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-semibold text-center flex items-center justify-center gap-2 print:bg-emerald-50 print:text-emerald-800 print:border-emerald-200">
-            <span>📧</span> Confirmation receipt email has been sent to your inbox.
-          </div>
-        )}
+
 
         <SuccessActions sessionId={session_id} />
       </div>

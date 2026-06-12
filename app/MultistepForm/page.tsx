@@ -81,12 +81,16 @@ const MultiStepForm = () => {
 
     try {
       const result = await createCheckoutSession(formDataToSend);
-      if (result?.url) {
+      if (result && result.success && result.url) {
         window.location.href = result.url;
+      } else {
+        console.error("Checkout failed:", result?.error);
+        alert(result?.error ? `Payment initiation failed: ${result.error}` : "Payment initiation failed. Please try again.");
+        setLoading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Checkout failed:", error);
-      alert("Payment initiation failed. Please try again.");
+      alert(`Payment initiation failed: ${error.message || "Unknown error"}`);
       setLoading(false);
     }
   };

@@ -454,7 +454,8 @@ const Coverage = () => {
                     isn't compliant could mean a PCN.
                   </p>
                   <Link
-                    href={`/MultistepForm?cleanAirZone=${selectedZone.name}`}
+                    href={`/MultistepForm?cleanAirZone=${encodeURIComponent(selectedZone.name)}`}
+                    onClick={() => setSelectedZone(null)}
                     className="bg-[#0c2340] hover:bg-[#113158] text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-1.5 w-fit transition duration-200 mt-4 shadow-sm"
                   >
                     Get Started
@@ -573,7 +574,8 @@ const Coverage = () => {
                 {/* Direct Actions */}
                 <div className="space-y-3">
                   <Link
-                    href={`/MultistepForm?cleanAirZone=${selectedZone.name}`}
+                    href={`/MultistepForm?cleanAirZone=${encodeURIComponent(selectedZone.name)}`}
+                    onClick={() => setSelectedZone(null)}
                     className="block text-center w-full py-4 bg-[#00c076] hover:bg-[#00d884] text-white font-extrabold text-sm rounded-xl transition shadow-lg shadow-[#00c076]/20"
                   >
                     Process Payment for {selectedZone.name}

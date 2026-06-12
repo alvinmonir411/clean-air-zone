@@ -4,12 +4,15 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 const Process = () => {
-  const [regNumber, setRegNumber] = useState("LO26 CAZ");
   const router = useRouter();
+  const [regNumber, setRegNumber] = useState("LO26 CAZ");
+  const [checkingState, setCheckingState] = useState<"idle" | "loading" | "result">("idle");
+  const [isCompliant, setIsCompliant] = useState(true);
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
     if (!regNumber.trim()) return;
+    
     router.push(`/MultistepForm?registrationNumber=${encodeURIComponent(regNumber.toUpperCase())}`);
   };
 
@@ -99,54 +102,111 @@ const Process = () => {
                   </div>
                 </div>
 
-                {/* Main Mockup Form */}
-                <form onSubmit={handleVerify} className="flex-1 flex flex-col justify-between mt-4">
-                  <div className="text-center space-y-6">
-                    {/* Header */}
-                    <div className="text-sm font-black text-[#007cc2]">
-                      CleanCityAir
-                    </div>
+                {/* Main Mockup Form / Checking Flow */}
+                {checkingState === "idle" && (
+                  <form onSubmit={handleVerify} className="flex-1 flex flex-col justify-between mt-4">
+                    <div className="text-center space-y-6">
+                      {/* Header */}
+                      <div className="text-sm font-black text-[#007cc2]">
+                        CleanCityAir
+                      </div>
 
-                    <h3 className="text-base font-extrabold text-[#0c2340]">
-                      Quick Compliance Check
-                    </h3>
+                      <h3 className="text-base font-extrabold text-[#0c2340]">
+                        Quick Compliance Check
+                      </h3>
 
-                    {/* Interactive Yellow License Plate */}
-                    <div className="relative inline-block mx-auto max-w-[240px] shadow-md rounded-lg overflow-hidden border border-gray-400">
-                      <div className="flex items-stretch bg-[#f7d117] h-14">
-                        {/* Blue GB side banner */}
-                        <div className="bg-[#002f6c] w-6 flex flex-col justify-between items-center py-2 text-white text-[8px] font-bold select-none leading-none shrink-0">
-                          <span className="text-[#f7d117]">★</span>
-                          <span>GB</span>
+                      {/* Interactive Yellow License Plate */}
+                      <div className="relative inline-block mx-auto max-w-[240px] shadow-md rounded-lg overflow-hidden border border-gray-400">
+                        <div className="flex items-stretch bg-[#f7d117] h-14">
+                          {/* Blue GB side banner */}
+                          <div className="bg-[#002f6c] w-6 flex flex-col justify-between items-center py-2 text-white text-[8px] font-bold select-none leading-none shrink-0">
+                            <span className="text-[#f7d117]">★</span>
+                            <span>GB</span>
+                          </div>
+                          {/* Input field */}
+                          <input
+                            type="text"
+                            value={regNumber}
+                            onChange={(e) => setRegNumber(e.target.value.toUpperCase())}
+                            className="w-full bg-transparent border-none outline-none font-sans font-black text-center text-[#111] text-2xl uppercase tracking-wider px-2 placeholder:text-black/30"
+                            maxLength={8}
+                            required
+                          />
                         </div>
-                        {/* Input field */}
-                        <input
-                          type="text"
-                          value={regNumber}
-                          onChange={(e) => setRegNumber(e.target.value.toUpperCase())}
-                          className="w-full bg-transparent border-none outline-none font-sans font-black text-center text-[#111] text-2xl uppercase tracking-wider px-2 placeholder:text-black/30"
-                          maxLength={8}
-                          required
-                        />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Submit Button & Subtext */}
-                  <div className="space-y-3">
+                    {/* Submit Button & Subtext */}
+                    <div className="space-y-3">
+                      <button
+                        type="submit"
+                        className="w-full bg-[#004f7c] hover:bg-[#00395a] text-white py-3.5 rounded-xl text-sm font-bold shadow-md transition-colors flex items-center justify-center gap-2 group cursor-pointer"
+                      >
+                        Verify & Continue
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+
+                      <p className="text-[10px] text-gray-400 font-semibold text-center leading-relaxed">
+                        Daily fee matches vehicle type automatically
+                      </p>
+                    </div>
+                  </form>
+                )}
+
+                {checkingState === "loading" && (
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-[#007cc2] border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm font-bold text-[#0c2340]">Searching DVLA record...</p>
+                    <p className="text-xs text-gray-400">Verifying emissions standard</p>
+                  </div>
+                )}
+
+                {checkingState === "result" && (
+                  <div className="flex-1 flex flex-col justify-between mt-4">
+                    <div className="text-center space-y-6">
+                      <div className="text-sm font-black text-[#007cc2]">
+                        CleanCityAir
+                      </div>
+                      
+                      <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center shadow-inner mt-2">
+                        {isCompliant ? (
+                          <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                            <span className="text-emerald-500 text-3xl font-extrabold">✓</span>
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center">
+                            <span className="text-amber-500 text-3xl font-extrabold">!</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-black text-[#0c2340] tracking-wide">
+                          {regNumber.toUpperCase()}
+                        </h3>
+                        <p className={`text-xs font-black uppercase tracking-widest ${isCompliant ? "text-emerald-600" : "text-amber-600"}`}>
+                          {isCompliant ? "Compliant - Free" : "Charge Outstanding"}
+                        </p>
+                      </div>
+
+                      <p className="text-xs text-gray-500 font-medium px-4 leading-relaxed">
+                        {isCompliant 
+                          ? "This vehicle meets the required emissions standards and is compliant. No Clean Air Zone daily charge is due." 
+                          : "This vehicle does not meet local emission standards. A Clean Air Zone daily charge of £9.00 is required for zone entries."}
+                      </p>
+                    </div>
+
                     <button
-                      type="submit"
-                      className="w-full bg-[#004f7c] hover:bg-[#00395a] text-white py-3.5 rounded-xl text-sm font-bold shadow-md transition-colors flex items-center justify-center gap-2 group"
+                      onClick={() => {
+                        setCheckingState("idle");
+                        setRegNumber("LO26 CAZ");
+                      }}
+                      className="w-full bg-[#0c2340] hover:bg-[#113158] text-white py-3.5 rounded-xl text-sm font-bold shadow-md transition-colors cursor-pointer"
                     >
-                      Verify & Continue
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                      Check Another
                     </button>
-
-                    <p className="text-[10px] text-gray-400 font-semibold text-center leading-relaxed">
-                      Daily fee matches vehicle type automatically
-                    </p>
                   </div>
-                </form>
+                )}
               </div>
             </div>
           </div>

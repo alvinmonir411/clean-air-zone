@@ -6,97 +6,103 @@ import { stripe } from "./lib/stripe";
 import { headers } from "next/headers";
 
 export async function createCheckoutSession(formData: FormData) {
-  const data = Object.fromEntries(formData);
-  const selectedDates = formData.getAll("selectedDates") as string[];
-
-  if (!selectedDates.length) {
-    throw new Error("No dates selected");
-  }
-
-  const totalDays = selectedDates.length;
-
-  // Fetch dynamic price based on selected zone
-  const getZoneRatePence = (zoneName: string): number => {
-    switch (zoneName) {
-      case "Birmingham":
-        return 800;
-      case "Bath":
-      case "Bradford":
-      case "Bristol":
-        return 900;
-      case "Portsmouth":
-      case "Sheffield":
-        return 1000;
-      case "Tyneside":
-        return 1250;
-      default:
-        return 1400;
-    }
-  };
-
-  const zoneRatePence = getZoneRatePence(String(data.cleanAirZone));
-  const serviceFeePence = 500; // £5.00 service fee
-  const totalAmountPounds = (totalDays * zoneRatePence) + serviceFeePence;
-
-  // 1️⃣ Save payment as PENDING
-  const dataSource = await getDataSource();
-  const paymentRepository = dataSource.getRepository(PaymentSchema);
-
-  const payment = new Payment();
-  payment.registrationNumber = String(data.registrationNumber);
-  payment.registrationLocation = String(data.registrationLocation);
-  payment.vehicleType = String(data.vehicleType);
-  payment.cleanAirZone = String(data.cleanAirZone);
-  payment.selectedDates = selectedDates;
-  payment.email = String(data.email);
-  payment.totalAmount = totalAmountPounds;
-  payment.currency = "GBP";
-  payment.status = "pending";
-
-  const savedPayment = await paymentRepository.save(payment);
-
-  // 2️⃣ Determine Base URL dynamically or from Env
-  const headersList = await headers();
-  const host = headersList.get("host");
-  const protocol = host?.includes("localhost") ? "http" : "https";
-  const dynamicBaseUrl = `${protocol}://${host}`;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || dynamicBaseUrl;
-
-  console.log(`Checkout: Using baseUrl ${baseUrl}`);
-
-  // 3️⃣ Create Stripe Checkout Session
-  let session;
   try {
-    session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "gbp",
-            product_data: {
-              name: `Clean Air Zone Charge - ${data.cleanAirZone}`,
+    const data = Object.fromEntries(formData);
+    const selectedDates = formData.getAll("selectedDates") as string[];
+
+    if (!selectedDates.length) {
+      return { success: false, error: "No dates selected" };
+    }
+
+    const totalDays = selectedDates.length;
+
+    // Fetch dynamic price based on selected zone
+    const getZoneRatePence = (zoneName: string): number => {
+      switch (zoneName) {
+        case "Birmingham":
+          return 800;
+        case "Bath":
+        case "Bradford":
+        case "Bristol":
+          return 900;
+        case "Portsmouth":
+        case "Sheffield":
+          return 1000;
+        case "Tyneside":
+          return 1250;
+        default:
+          return 1400;
+      }
+    };
+
+    const zoneRatePence = getZoneRatePence(String(data.cleanAirZone));
+    const serviceFeePence = 500; // £5.00 service fee
+    const totalAmountPounds = (totalDays * zoneRatePence) + serviceFeePence;
+
+    // 1️⃣ Save payment as PENDING
+    const dataSource = await getDataSource();
+    const paymentRepository = dataSource.getRepository(PaymentSchema);
+
+    const payment = new Payment();
+    payment.registrationNumber = String(data.registrationNumber);
+    payment.registrationLocation = String(data.registrationLocation);
+    payment.vehicleType = String(data.vehicleType);
+    payment.cleanAirZone = String(data.cleanAirZone);
+    payment.selectedDates = selectedDates;
+    payment.email = String(data.email);
+    payment.totalAmount = totalAmountPounds;
+    payment.currency = "GBP";
+    payment.status = "pending";
+
+    const savedPayment = await paymentRepository.save(payment);
+
+    // 2️⃣ Determine Base URL dynamically or from Env
+    const headersList = await headers();
+    const host = headersList.get("host");
+    const protocol = host?.includes("localhost") ? "http" : "https";
+    const dynamicBaseUrl = `${protocol}://${host}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || dynamicBaseUrl;
+
+    console.log(`Checkout: Using baseUrl ${baseUrl}`);
+
+    // 3️⃣ Create Stripe Checkout Session
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "gbp",
+              product_data: {
+                name: `Clean Air Zone Charge - ${data.cleanAirZone}`,
+              },
+              unit_amount: Math.round(totalAmountPounds), // Ensure integer
             },
-            unit_amount: Math.round(totalAmountPounds), // Ensure integer
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        customer_email: data.email as string,
+        metadata: {
+          paymentId: savedPayment.id,
         },
-      ],
-      customer_email: data.email as string,
-      metadata: {
-        paymentId: savedPayment.id,
-      },
-      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/MultistepForm?canceled=true`,
-    });
-  } catch (stripeError: any) {
-    console.error("❌ Stripe Session Creation Failed:", stripeError.message);
-    throw new Error(`Payment service unavailable: ${stripeError.message}`);
+        success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/MultistepForm?canceled=true`,
+      });
+    } catch (stripeError: any) {
+      console.error("❌ Stripe Session Creation Failed:", stripeError.message);
+      return { success: false, error: `Stripe Error: ${stripeError.message}` };
+    }
+
+    // 4️⃣ Update DB with Stripe Session ID
+    savedPayment.stripeSessionId = session.id;
+    await paymentRepository.save(savedPayment);
+
+    return { success: true, url: session.url };
+  } catch (error: any) {
+    console.error("❌ createCheckoutSession failed:", error);
+    return { success: false, error: error.message || "Internal server error" };
   }
-
-  // 4️⃣ Update DB with Stripe Session ID
-  savedPayment.stripeSessionId = session.id;
-  await paymentRepository.save(savedPayment);
-
-  return { url: session.url };
 }
+

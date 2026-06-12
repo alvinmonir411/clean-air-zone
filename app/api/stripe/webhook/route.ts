@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/app/lib/stripe";
 import { getDataSource } from "@/app/lib/db";
 import { PaymentSchema } from "@/app/lib/entities/payment.entity";
-import { sendConfirmationEmail } from "@/app/lib/email";
+
 
 export async function POST(req: Request) {
   console.log("🔔 Webhook request received");
@@ -70,22 +70,7 @@ export async function POST(req: Request) {
         const result = await paymentRepository.save(existingPayment);
         console.log("🟢 PostgreSQL DB updated successfully. Status:", result.status);
 
-        // Send confirmation email
-        try {
-          console.log("📧 Attempting to send confirmation email to:", result.email);
-          await sendConfirmationEmail({
-            email: result.email,
-            registrationNumber: result.registrationNumber,
-            registrationLocation: result.registrationLocation,
-            vehicleType: result.vehicleType,
-            cleanAirZone: result.cleanAirZone,
-            selectedDates: result.selectedDates,
-            totalAmount: result.totalAmount,
-          });
-          console.log("✉️ Email sent successfully for payment ID:", paymentId);
-        } catch (emailError) {
-          console.error("❌ Failed to send confirmation email:", emailError);
-        }
+        console.log("📧 Skipped confirmation email send.");
       } else {
         console.log("ℹ️ Payment is already marked as paid.");
       }
