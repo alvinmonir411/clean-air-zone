@@ -1,4 +1,5 @@
-import clientPromise from "../lib/mongodb";
+import { getDataSource } from "../lib/db";
+import { Payment, PaymentSchema } from "../lib/entities/payment.entity";
 import DashboardClient from "./DashboardClient";
 import { cookies } from "next/headers";
 import LoginView from "./LoginView";
@@ -23,14 +24,14 @@ interface Payment {
 }
 
 async function getPayments(): Promise<Payment[]> {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB);
+  const dataSource = await getDataSource();
+  const paymentRepository = dataSource.getRepository(PaymentSchema);
 
-  const payments = await db
-    .collection("payments")
-    .find({})
-    .sort({ createdAt: -1 })
-    .toArray();
+  const payments = await paymentRepository.find({
+    order: {
+      createdAt: "DESC"
+    }
+  });
 
   console.log(`AdminDashboard: Found ${payments.length} orders`);
   if (payments.length > 0) {
@@ -40,8 +41,8 @@ async function getPayments(): Promise<Payment[]> {
   // We must serialize the data before passing to client component
   return payments.map((p) => ({
     ...p,
-    _id: p._id.toString(),
-    createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null,
+    _id: p.id,
+    createdAt: p.createdAt ? p.createdAt.toISOString() : null,
   })) as unknown as Payment[];
 }
 

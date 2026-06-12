@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import Link from "next/link";
+import { X } from "lucide-react";
 import Step1_Vehicle from "../src/components/formSteps/Step1_Vehicle";
 import Step2_Type from "../src/components/formSteps/Step2_Type";
 import Step3_Location from "../src/components/formSteps/Step3_Location";
@@ -33,7 +35,7 @@ const defaultValues: CheckoutFormData = {
   paymentDate: "",
   selectedDates: [],
   email: "",
-  acceptTerms: false,
+  acceptTerms: true,
   country: "UK",
 };
 
@@ -43,6 +45,7 @@ const MultiStepForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [canceled, setCanceled] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const methods = useForm<CheckoutFormData>({
     defaultValues,
@@ -64,11 +67,6 @@ const MultiStepForm = () => {
   };
 
   const onSubmit = async (data: CheckoutFormData) => {
-    if (!data.acceptTerms) {
-      alert("Please accept terms before payment");
-      return;
-    }
-
     setLoading(true);
 
     const formDataToSend = new FormData();
@@ -96,16 +94,32 @@ const MultiStepForm = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
+      
+      const regNum = urlParams.get("registrationNumber");
+      const caz = urlParams.get("cleanAirZone");
+      const vType = urlParams.get("vehicleType");
+      
+      if (regNum) {
+        methods.setValue("registrationNumber", regNum.toUpperCase());
+      }
+      if (caz) {
+        methods.setValue("cleanAirZone", caz);
+      }
+      if (vType) {
+        methods.setValue("vehicleType", vType);
+      }
+
       if (urlParams.get("canceled") === "true") {
         setCanceled(true);
         setCurrentStep(5);
       }
+      setIsInitialized(true);
     }
-  }, []);
+  }, [methods]);
 
   // Sync state to URL whenever formData changes
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!isInitialized || typeof window === "undefined") return;
 
     const params = new URLSearchParams(window.location.search);
 
@@ -180,13 +194,29 @@ const MultiStepForm = () => {
   };
 
   return (
-    <div className="flex justify-center min-h-screen bg-gray-50 pt-10">
-      {" "}
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow">
-        <Stepper currentStep={currentStep} />       {" "}
-        <FormProvider {...methods}>{renderStep()}</FormProvider>     {" "}
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-[#0b3558] via-[#02182B] to-[#0c314b] p-4 font-sans select-none">
+      <div className="w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl relative border border-white/5 overflow-hidden">
+        {/* Step Header with Close Button */}
+        <div className="text-center pt-8 relative">
+          <span className="text-xs font-black tracking-widest text-[#0c4068] uppercase">
+            Step {currentStep} of 5
+          </span>
+          <Link
+            href="/"
+            className="absolute top-6 right-8 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition"
+          >
+            <X className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* Stepper progress circles */}
+        <Stepper currentStep={currentStep} />
+        
+        {/* Step Contents */}
+        <FormProvider {...methods}>
+          {renderStep()}
+        </FormProvider>
       </div>
-      {" "}
     </div>
   );
 };

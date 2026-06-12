@@ -1,6 +1,7 @@
 "use server";
 
-import clientPromise from "./lib/mongodb";
+import { getDataSource } from "./lib/db";
+import { Payment, PaymentSchema } from "./lib/entities/payment.entity";
 import { stripe } from "./lib/stripe";
 import { headers } from "next/headers";
 
@@ -14,39 +15,45 @@ export async function createCheckoutSession(formData: FormData) {
 
   const totalDays = selectedDates.length;
 
-  // Fetch dynamic price from DB
-  let pricePerDay = 1400; // Default fallback
-  try {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-    const settings = await db.collection("settings").findOne({ _id: "pricing" as any });
-    if (settings && settings.amount) {
-      pricePerDay = settings.amount;
+  // Fetch dynamic price based on selected zone
+  const getZoneRatePence = (zoneName: string): number => {
+    switch (zoneName) {
+      case "Birmingham":
+        return 800;
+      case "Bath":
+      case "Bradford":
+      case "Bristol":
+        return 900;
+      case "Portsmouth":
+      case "Sheffield":
+        return 1000;
+      case "Tyneside":
+        return 1250;
+      default:
+        return 1400;
     }
-  } catch (error) {
-    console.error("Error fetching price:", error);
-  }
-
-  const totalAmountPounds = totalDays * pricePerDay;
-
-  // 1️⃣ Save payment as PENDING
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB);
-
-  const paymentDoc = {
-    registrationNumber: data.registrationNumber,
-    registrationLocation: data.registrationLocation,
-    vehicleType: data.vehicleType,
-    cleanAirZone: data.cleanAirZone,
-    selectedDates,
-    email: data.email,
-    totalAmount: totalAmountPounds,
-    currency: "GBP",
-    status: "pending",
-    createdAt: new Date(),
   };
 
-  const result = await db.collection("payments").insertOne(paymentDoc);
+  const zoneRatePence = getZoneRatePence(String(data.cleanAirZone));
+  const serviceFeePence = 500; // £5.00 service fee
+  const totalAmountPounds = (totalDays * zoneRatePence) + serviceFeePence;
+
+  // 1️⃣ Save payment as PENDING
+  const dataSource = await getDataSource();
+  const paymentRepository = dataSource.getRepository(PaymentSchema);
+
+  const payment = new Payment();
+  payment.registrationNumber = String(data.registrationNumber);
+  payment.registrationLocation = String(data.registrationLocation);
+  payment.vehicleType = String(data.vehicleType);
+  payment.cleanAirZone = String(data.cleanAirZone);
+  payment.selectedDates = selectedDates;
+  payment.email = String(data.email);
+  payment.totalAmount = totalAmountPounds;
+  payment.currency = "GBP";
+  payment.status = "pending";
+
+  const savedPayment = await paymentRepository.save(payment);
 
   // 2️⃣ Determine Base URL dynamically or from Env
   const headersList = await headers();
@@ -77,10 +84,10 @@ export async function createCheckoutSession(formData: FormData) {
       ],
       customer_email: data.email as string,
       metadata: {
-        paymentId: result.insertedId.toString(),
+        paymentId: savedPayment.id,
       },
       success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/?canceled=true`,
+      cancel_url: `${baseUrl}/MultistepForm?canceled=true`,
     });
   } catch (stripeError: any) {
     console.error("❌ Stripe Session Creation Failed:", stripeError.message);
@@ -88,14 +95,8 @@ export async function createCheckoutSession(formData: FormData) {
   }
 
   // 4️⃣ Update DB with Stripe Session ID
-  await db.collection("payments").updateOne(
-    { _id: result.insertedId },
-    {
-      $set: {
-        stripeSessionId: session.id,
-      },
-    }
-  );
+  savedPayment.stripeSessionId = session.id;
+  await paymentRepository.save(savedPayment);
 
   return { url: session.url };
 }

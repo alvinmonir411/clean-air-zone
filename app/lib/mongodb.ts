@@ -1,4 +1,12 @@
 import { MongoClient } from "mongodb";
+import dns from "dns";
+
+// Configure Node's DNS resolver to use Google and Cloudflare public DNS to bypass local SRV resolution issues in dev
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch (e: any) {
+  console.warn("MongoDB Client: Failed to set DNS servers:", e.message);
+}
 
 const uri = process.env.MONGODB_URI;
 const options = {};
@@ -25,7 +33,10 @@ if (!uri) {
   if (process.env.NODE_ENV === "development") {
     if (!global._mongoClientPromise) {
       client = new MongoClient(uri, options);
-      global._mongoClientPromise = client.connect();
+      global._mongoClientPromise = client.connect().catch((err) => {
+        global._mongoClientPromise = undefined;
+        throw err;
+      });
     }
     clientPromise = global._mongoClientPromise;
   } else {
