@@ -1,5 +1,5 @@
 import { getDataSource } from "../lib/db";
-import { Payment, PaymentSchema } from "../lib/entities/payment.entity";
+import { PaymentSchema } from "../lib/entities/payment.entity";
 import DashboardClient from "./DashboardClient";
 import { cookies } from "next/headers";
 import LoginView from "./LoginView";

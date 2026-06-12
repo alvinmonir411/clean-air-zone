@@ -1,9 +1,9 @@
 "use server";
 
 import { cookies } from "next/headers";
-import clientPromise from "../lib/mongodb";
 import { stripe } from "../lib/stripe";
-import { ObjectId } from "mongodb";
+import { getDataSource } from "../lib/db";
+import { PaymentSchema } from "../lib/entities/payment.entity";
 
 export async function verifyPassword(formData: FormData) {
     const password = formData.get("password") as string;
@@ -25,13 +25,15 @@ export async function verifyPassword(formData: FormData) {
 
 export async function verifyPaymentStatus(paymentId: string) {
     try {
-        const client = await clientPromise;
-        const db = client.db(process.env.MONGODB_DB);
+        const dataSource = await getDataSource();
+        const paymentRepository = dataSource.getRepository(PaymentSchema);
 
-        const payment = await db.collection("payments").findOne({ _id: new ObjectId(paymentId) });
+        const payment = await paymentRepository.findOne({
+            where: { id: paymentId }
+        });
 
         if (!payment) {
-            return { success: false, error: "Payment not found" };
+            return { success: false, error: "Payment not found in database" };
         }
 
         if (payment.status === "paid") {
@@ -45,18 +47,11 @@ export async function verifyPaymentStatus(paymentId: string) {
         const session = await stripe.checkout.sessions.retrieve(payment.stripeSessionId);
 
         if (session.payment_status === "paid") {
-            await db.collection("payments").updateOne(
-                { _id: new ObjectId(paymentId) },
-                {
-                    $set: {
-                        status: "paid",
-                        paidAt: new Date(),
-                    },
-                }
-            );
+            payment.status = "paid";
+            payment.paidAt = new Date();
 
-            // Optional: trigger email here too if not sent? 
-            // For now, let's keep it simple as the user might just want the status update.
+            await paymentRepository.save(payment);
+
             console.log(`Manual verification: Updated ${paymentId} to paid`);
             return { success: true, newStatus: "paid" };
         } else {
@@ -67,3 +62,4 @@ export async function verifyPaymentStatus(paymentId: string) {
         return { success: false, error: error.message || "Internal server error" };
     }
 }
+
