@@ -1,17 +1,15 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
-import clientPromise from "@/app/lib/mongodb";
-import { ObjectId } from "mongodb";
 import { stripe } from "@/app/lib/stripe";
+import { getDataSource } from "@/app/lib/db";
+import { PaymentSchema } from "@/app/lib/entities/payment.entity";
+import { sendConfirmationEmail } from "@/app/lib/email";
 
 export async function POST(req: Request) {
   console.log("🔔 Webhook request received");
-  // 1. রিকোয়েস্ট বডিকে বাফার হিসেবে পান
+  
   const buffer = await req.arrayBuffer();
-  // 2. বাফারকে কাঁচা স্ট্রিং-এ রূপান্তর করুন
   const body = Buffer.from(buffer).toString();
-
-  // 3. সিগনেচার হেডার্স পান
   const sig = req.headers.get("stripe-signature");
   console.log("Header signature found:", !!sig);
 
@@ -25,7 +23,6 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
 
-  // 4. সিগনেচার যাচাই (সঠিক body এবং sig ব্যবহার করে)
   try {
     event = stripe.webhooks.constructEvent(
       body,
@@ -52,50 +49,51 @@ export async function POST(req: Request) {
     }
 
     try {
-      const client = await clientPromise;
-      const db = client.db(process.env.MONGODB_DB);
+      const dataSource = await getDataSource();
+      const paymentRepository = dataSource.getRepository(PaymentSchema);
 
-      console.log("💾 Updating DB for paymentId:", paymentId);
-      const result = await db.collection("payments").findOneAndUpdate(
-        { _id: new ObjectId(paymentId) },
-        {
-          $set: {
-            status: "paid",
-            paidAt: new Date(),
-            stripeSessionId: session.id,
-          },
-        },
-        { returnDocument: "after" }
-      );
+      console.log("💾 Updating PostgreSQL DB for paymentId:", paymentId);
+      const existingPayment = await paymentRepository.findOne({
+        where: { id: paymentId }
+      });
 
-      if (!result) {
+      if (!existingPayment) {
         console.error("❌ No payment found in DB with ID:", paymentId);
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
-      console.log("🟢 DB updated successfully. Status:", result.status);
+      if (existingPayment.status !== "paid") {
+        existingPayment.status = "paid";
+        existingPayment.paidAt = new Date();
+        existingPayment.stripeSessionId = session.id;
 
-      // 3. Send confirmation email
-      try {
-        console.log("📧 Attempting to send confirmation email to:", result.email);
-        const { sendConfirmationEmail } = await import("@/app/lib/email");
-        await sendConfirmationEmail({
-          email: result.email,
-          registrationNumber: result.registrationNumber,
-          registrationLocation: result.registrationLocation,
-          vehicleType: result.vehicleType,
-          cleanAirZone: result.cleanAirZone,
-          selectedDates: result.selectedDates,
-          totalAmount: result.totalAmount,
-        });
-        console.log("✉️ Email sent successfully for payment ID:", paymentId);
-      } catch (emailError) {
-        console.error("❌ Failed to send confirmation email:", emailError);
+        const result = await paymentRepository.save(existingPayment);
+        console.log("🟢 PostgreSQL DB updated successfully. Status:", result.status);
+
+        // Send confirmation email
+        try {
+          console.log("📧 Attempting to send confirmation email to:", result.email);
+          await sendConfirmationEmail({
+            email: result.email,
+            registrationNumber: result.registrationNumber,
+            registrationLocation: result.registrationLocation,
+            vehicleType: result.vehicleType,
+            cleanAirZone: result.cleanAirZone,
+            selectedDates: result.selectedDates,
+            totalAmount: result.totalAmount,
+          });
+          console.log("✉️ Email sent successfully for payment ID:", paymentId);
+        } catch (emailError) {
+          console.error("❌ Failed to send confirmation email:", emailError);
+        }
+      } else {
+        console.log("ℹ️ Payment is already marked as paid.");
       }
     } catch (dbError) {
-      console.error(`❌ MongoDB error for ID ${paymentId}:`, dbError);
+      console.error(`❌ PostgreSQL error for ID ${paymentId}:`, dbError);
     }
   }
 
   return NextResponse.json({ received: true }, { status: 200 });
 }
+
