@@ -1,7 +1,7 @@
 "use server";
 
 import { getDataSource } from "./lib/db";
-import { Payment, PaymentSchema } from "./lib/entities/payment.entity";
+import { PaymentSchema } from "./lib/entities/payment.entity";
 import { stripe } from "./lib/stripe";
 import { headers } from "next/headers";
 
@@ -43,18 +43,17 @@ export async function createCheckoutSession(formData: FormData) {
     const dataSource = await getDataSource();
     const paymentRepository = dataSource.getRepository(PaymentSchema);
 
-    const payment = new Payment();
-    payment.registrationNumber = String(data.registrationNumber);
-    payment.registrationLocation = String(data.registrationLocation);
-    payment.vehicleType = String(data.vehicleType);
-    payment.cleanAirZone = String(data.cleanAirZone);
-    payment.selectedDates = selectedDates;
-    payment.email = String(data.email);
-    payment.totalAmount = totalAmountPounds;
-    payment.currency = "GBP";
-    payment.status = "pending";
-
-    const savedPayment = await paymentRepository.save(payment);
+    const savedPayment = await paymentRepository.save({
+      registrationNumber: String(data.registrationNumber),
+      registrationLocation: String(data.registrationLocation),
+      vehicleType: String(data.vehicleType),
+      cleanAirZone: String(data.cleanAirZone),
+      selectedDates: selectedDates,
+      email: String(data.email),
+      totalAmount: totalAmountPounds,
+      currency: "GBP",
+      status: "pending",
+    });
 
     // 2️⃣ Determine Base URL dynamically or from Env
     const headersList = await headers();
