@@ -41,7 +41,7 @@ export async function createCheckoutSession(formData: FormData) {
 
     // 1️⃣ Save payment as PENDING
     const dataSource = await getDataSource();
-    const paymentRepository = dataSource.getRepository(PaymentSchema);
+    const paymentRepository = dataSource.getRepository<any>("Payment");
 
     const savedPayment = await paymentRepository.save({
       registrationNumber: String(data.registrationNumber),

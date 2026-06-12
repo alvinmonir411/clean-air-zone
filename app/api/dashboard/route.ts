@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
     try {
         const dataSource = await getDataSource();
-        const paymentRepository = dataSource.getRepository(PaymentSchema);
+        const paymentRepository = dataSource.getRepository<any>("Payment");
 
         // Sort by createdAt descending (newest first)
         const payments = await paymentRepository.find({

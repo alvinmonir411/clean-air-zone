@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 
     try {
       const dataSource = await getDataSource();
-      const paymentRepository = dataSource.getRepository(PaymentSchema);
+      const paymentRepository = dataSource.getRepository<any>("Payment");
 
       console.log("💾 Updating PostgreSQL DB for paymentId:", paymentId);
       const existingPayment = await paymentRepository.findOne({

@@ -26,7 +26,7 @@ export async function verifyPassword(formData: FormData) {
 export async function verifyPaymentStatus(paymentId: string) {
     try {
         const dataSource = await getDataSource();
-        const paymentRepository = dataSource.getRepository(PaymentSchema);
+        const paymentRepository = dataSource.getRepository<any>("Payment");
 
         const payment = await paymentRepository.findOne({
             where: { id: paymentId }

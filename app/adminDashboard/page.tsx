@@ -25,7 +25,7 @@ interface Payment {
 
 async function getPayments(): Promise<Payment[]> {
   const dataSource = await getDataSource();
-  const paymentRepository = dataSource.getRepository(PaymentSchema);
+  const paymentRepository = dataSource.getRepository<any>("Payment");
 
   const payments = await paymentRepository.find({
     order: {

@@ -37,7 +37,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
     session = await stripe.checkout.sessions.retrieve(session_id);
 
     const dataSource = await getDataSource();
-    const paymentRepository = dataSource.getRepository(PaymentSchema);
+    const paymentRepository = dataSource.getRepository<any>("Payment");
 
     if (session.payment_status === "paid") {
       const paymentId = session.metadata?.paymentId;
@@ -92,7 +92,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
     // Fallback: search by stripeSessionId in db
     try {
       const dataSource = await getDataSource();
-      const paymentRepository = dataSource.getRepository(PaymentSchema);
+      const paymentRepository = dataSource.getRepository<any>("Payment");
       dbPayment = await paymentRepository.findOne({
         where: { stripeSessionId: session_id }
       });
