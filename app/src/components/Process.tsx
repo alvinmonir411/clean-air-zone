@@ -72,10 +72,10 @@ const Process = () => {
                 </div>
                 <div>
                   <h4 className="font-extrabold text-[#0c2340] text-lg mb-1">
-                    Pay & relax
+                    Register & relax
                   </h4>
                   <p className="text-gray-500 text-sm font-medium">
-                    Settle the daily fee in seconds and avoid a PCN.
+                    Register the daily entry in seconds and avoid a PCN.
                   </p>
                 </div>
               </div>
@@ -147,7 +147,7 @@ const Process = () => {
                       </button>
 
                       <p className="text-[10px] text-gray-400 font-semibold text-center leading-relaxed">
-                        Daily fee matches vehicle type automatically
+                        Vehicle details automatically matched from DVLA record
                       </p>
                     </div>
                   </form>
@@ -192,7 +192,7 @@ const Process = () => {
                       <p className="text-xs text-gray-500 font-medium px-4 leading-relaxed">
                         {isCompliant 
                           ? "This vehicle meets the required emissions standards and is compliant. No Clean Air Zone daily charge is due." 
-                          : "This vehicle does not meet local emission standards. A Clean Air Zone daily charge of £9.00 is required for zone entries."}
+                          : "This vehicle does not meet local emission standards. A Clean Air Zone registration is required for zone entries."}
                       </p>
                     </div>
 

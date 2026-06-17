@@ -16,7 +16,7 @@ const Cta = () => {
               Ready to start?
             </h2>
             <p className="text-white/75 font-semibold max-w-md mx-auto text-sm sm:text-base">
-              Skip the queue and clear your charge right now.
+              Skip the queue and register your vehicle right now.
             </p>
             <div className="pt-4 flex justify-center">
               <Link

@@ -11,13 +11,13 @@ const benefits = [
   },
   {
     title: "Under 60 seconds",
-    description: "Plate, dates, pay. The whole flow takes less than a minute.",
+    description: "Plate, dates, confirm. The whole flow takes less than a minute.",
     icon: Clock,
     colorClass: "bg-amber-50 text-amber-600 border-amber-100",
   },
   {
     title: "PCN protection",
-    description: "Settle the daily charge in time and dodge a penalty.",
+    description: "Register the daily entry in time and dodge a penalty.",
     icon: ShieldCheck,
     colorClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
   },
@@ -43,7 +43,7 @@ const Benefits = () => {
           </h2>
           <p className="text-gray-500 font-medium">
             Our service is designed to be the simplest, fastest, and most secure
-            way to settle Clean Air Zone charges in the UK.
+            way to register for Clean Air Zones in the UK.
           </p>
         </div>
 

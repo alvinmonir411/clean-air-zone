@@ -54,7 +54,7 @@ const Hero = () => {
 
             {/* Description */}
             <p className="text-lg text-white/80 font-medium leading-relaxed max-w-xl mb-8">
-              The fastest way to settle a UK Clean Air Zone daily fee - no apps,
+              The fastest way to register for a UK Clean Air Zone daily trip - no apps,
               no paperwork, no wasted time.
             </p>
 
@@ -79,7 +79,7 @@ const Hero = () => {
             <div className="flex items-center gap-2 text-white/75 text-xs sm:text-sm mt-8">
               <ShieldCheck className="w-4 h-4 text-[#00c076]" />
               <span className="font-medium">
-                Service fee | Secure payment | Instant receipt
+                Clean Air Zones | Easy registration | Instant confirmation
               </span>
             </div>
           </div>
@@ -107,7 +107,7 @@ const Hero = () => {
           <div className="bg-white p-8 rounded-2xl border border-gray-100/80 shadow-sm flex flex-col justify-center gap-2">
             <span className="text-4xl font-extrabold text-[#0c2340]">24/7</span>
             <span className="text-sm font-medium text-gray-500">
-              Online payment access
+              Online registration access
             </span>
           </div>
 
@@ -117,7 +117,7 @@ const Hero = () => {
               Instant
             </span>
             <span className="text-sm font-medium text-gray-500">
-              Receipt after checkout
+              Registration confirmation
             </span>
           </div>
         </div>

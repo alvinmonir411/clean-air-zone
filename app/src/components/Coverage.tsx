@@ -450,7 +450,7 @@ const Coverage = () => {
                     Drove through {selectedZone.name}?
                   </h4>
                   <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                    A daily charge may apply. Skipping payment when your vehicle
+                    A daily charge may apply. Skipping registration when your vehicle
                     isn't compliant could mean a PCN.
                   </p>
                   <Link
@@ -578,7 +578,7 @@ const Coverage = () => {
                     onClick={() => setSelectedZone(null)}
                     className="block text-center w-full py-4 bg-[#00c076] hover:bg-[#00d884] text-white font-extrabold text-sm rounded-xl transition shadow-lg shadow-[#00c076]/20"
                   >
-                    Process Payment for {selectedZone.name}
+                    Process Registration for {selectedZone.name}
                   </Link>
 
                   <a

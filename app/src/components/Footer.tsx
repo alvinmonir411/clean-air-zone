@@ -17,9 +17,8 @@ const Footer: React.FC = () => {
               </span>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed font-medium">
-              Simplifying clean air payments for drivers across the UK. Fast
-              checkouts, automatic compliance matching, and secure checkout
-              processing.
+              Simplifying clean air registrations for drivers across the UK. Fast
+              submissions, automatic compliance matching, and secure verification.
             </p>
             <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-sm pt-2">
               Disclaimer: CleanCityAir is an independent portal facilitating
@@ -48,7 +47,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <a href="#process" className="hover:text-white transition">
-                    Payment Process
+                    Registration Process
                   </a>
                 </li>
                 <li>
@@ -139,7 +138,7 @@ const Footer: React.FC = () => {
           </div>
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#00b875]">
             <ShieldCheck className="w-4 h-4" />
-            <span>100% Secure Checkout</span>
+            <span>100% Secure Registration</span>
           </div>
         </div>
       </div>
